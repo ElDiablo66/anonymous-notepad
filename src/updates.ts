@@ -36,6 +36,8 @@ export async function installUpdate(): Promise<void> {
 export function watchForUpdates(): () => void {
   if (!platform.desktop) return () => undefined;
   const look = async (atStart: boolean) => {
+    // Installing restarts the app, so the tabs must be back and saveable first.
+    await files.sessionLoaded;
     const choice = get().settings.updates;
     if (choice === "off") return;
     try {

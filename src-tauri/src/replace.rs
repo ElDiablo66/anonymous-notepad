@@ -332,6 +332,19 @@ mod tests {
     }
 
     #[test]
+    fn line_end_anchor_works_in_windows_files() {
+        let dir = folder("crlf");
+        fs::write(dir.join("a.txt"), "one;\r\ntwo;\r\n").unwrap();
+        let plan = preview(&options(&dir, ";$", "regex"), ",", 1).unwrap();
+        assert_eq!(plan.total, 2);
+        let pattern = build_pattern(";$", "regex", true, false).unwrap();
+        let file = &plan.files[0];
+        apply_file(&pattern, &Replacement::new(",", "regex"), &Chosen { path: file.path.clone(), fingerprint: file.fingerprint.clone() });
+        assert_eq!(fs::read_to_string(dir.join("a.txt")).unwrap(), "one,\r\ntwo,\r\n");
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
     fn a_file_changed_after_the_preview_is_left_alone() {
         let dir = folder("changed");
         let path = dir.join("a.txt");

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.2, 26 November 2026
+
+Fixed
+
+- The session could be saved before it had finished loading, for example when a restored file sat on a slow drive or the updater restarted the app early. Tabs could then be missing after the next start. Nothing is saved, and no update is installed, until the tabs are back.
+- Regular expressions with `$` (end of line) now match in files with Windows line endings in replace in files and in the large-file viewer.
+- The scrollbar marks no longer search the whole file again on every key press or cursor move, which slowed typing in large files while the find panel was open.
+- Large-file viewer: on lines in an old single-byte encoding, find put the highlight a few characters off and could stop on the same match twice.
+- A pin, colour or new name given to a restored tab before it was first opened is now kept.
+
 ## 0.4.1, 26 November 2026
 
 Added

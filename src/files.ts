@@ -12,6 +12,14 @@ export const BIG_BYTES = 50 * 1024 * 1024;
 /** The editor keeps the whole text in memory; the backend refuses files above this. */
 export const EDITOR_LIMIT = 256 * 1024 * 1024;
 
+/** Becomes true once the saved session is back on screen. Saving before that would write an empty or partial session over the real one. */
+let sessionReady = false;
+let markLoaded: () => void = () => undefined;
+/** Resolves when the saved session has been restored. */
+export const sessionLoaded = new Promise<void>((resolve) => {
+  markLoaded = resolve;
+});
+
 /** Session entries for tabs whose files have not been read yet. */
 const pendingDocs = new Map<string, SavedDoc>();
 const loading = new Map<string, Promise<void>>();
@@ -475,13 +483,15 @@ interface SavedSession {
 }
 
 export async function saveSession(): Promise<void> {
+  if (!sessionReady) return;
   const state = get();
   const docs: SavedDoc[] = [];
   for (const doc of state.docs) {
     if (doc.pending) {
       // Not read yet, so its saved entry is still exact.
       const waiting = pendingDocs.get(doc.id);
-      if (waiting) docs.push(waiting);
+      // Name, pin and colour can change before the tab is first shown.
+      if (waiting) docs.push({ ...waiting, name: doc.name, pinned: doc.pinned, color: doc.color });
       continue;
     }
     if (doc.big) {
@@ -588,6 +598,8 @@ export async function loadSession(): Promise<void> {
   }
 
   if (!get().docs.length) newDoc();
+  sessionReady = true;
+  markLoaded();
   const startup = await platform.startupFiles();
   if (startup.length) await openPaths(startup);
 }

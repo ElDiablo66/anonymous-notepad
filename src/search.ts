@@ -253,16 +253,22 @@ export function selectionSeed(): string {
 
 const SCROLL_MARK_LIMIT = 10000;
 
+let markCache: { doc: unknown; key: string; matches: number[] } | null = null;
+
 scrollSearch.matches = (state) => {
   const panel = get().bottom;
   if (panel !== "find" && panel !== "results") return null;
   const query = buildQuery(lastFind);
   if (!query) return null;
+  // The same text and the same search give the same matches; moving the cursor costs nothing.
+  const key = JSON.stringify([lastFind.what, lastFind.mode, lastFind.matchCase, lastFind.wholeWord]);
+  if (markCache && markCache.doc === state.doc && markCache.key === key) return markCache.matches;
   const out: number[] = [];
   const cursor = query.getCursor(state);
   for (let step = cursor.next(); !step.done && out.length < SCROLL_MARK_LIMIT; step = cursor.next()) {
     if (step.value.to > step.value.from) out.push(step.value.from);
   }
+  markCache = { doc: state.doc, key, matches: out };
   return out;
 };
 

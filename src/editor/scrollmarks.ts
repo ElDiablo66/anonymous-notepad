@@ -21,6 +21,7 @@ const WIDTH = 11;
 class ScrollMarks {
   canvas: HTMLCanvasElement;
   frame = 0;
+  timer: ReturnType<typeof setTimeout> | undefined;
 
   constructor(readonly view: EditorView) {
     this.canvas = document.createElement("canvas");
@@ -31,7 +32,13 @@ class ScrollMarks {
   }
 
   update(update: ViewUpdate): void {
-    if (update.docChanged || update.selectionSet || update.viewportChanged || update.geometryChanged || update.heightChanged || update.transactions.some((tr) => tr.effects.length > 0)) {
+    // While typing, the matches are worked out again only after a short pause.
+    if (update.docChanged) {
+      clearTimeout(this.timer);
+      this.timer = setTimeout(() => this.schedule(), 200);
+      return;
+    }
+    if (update.selectionSet || update.viewportChanged || update.geometryChanged || update.heightChanged || update.transactions.some((tr) => tr.effects.length > 0)) {
       this.schedule();
     }
   }
@@ -103,6 +110,7 @@ class ScrollMarks {
   }
 
   destroy(): void {
+    clearTimeout(this.timer);
     cancelAnimationFrame(this.frame);
     this.canvas.remove();
   }

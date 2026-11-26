@@ -117,10 +117,13 @@ impl BigFile {
         let found = if backward { self.last_before(pattern, from) } else { pattern.find_at(&self.map[..], from).filter(|m| !m.is_empty()) };
         let found = found?;
         let start = self.line_start(found.start());
+        let end = memchr(b'\n', &self.map[start..]).map_or(self.map.len(), |at| start + at);
+        let line = &self.map[start..end];
+        let (from, to) = (found.start() - start, found.end().min(end) - start);
         Some(BigHit {
             line: self.line_at(found.start()),
-            col: String::from_utf8_lossy(&self.map[start..found.start()]).encode_utf16().count(),
-            len: String::from_utf8_lossy(found.as_bytes()).encode_utf16().count(),
+            col: units_between(line, 0, from),
+            len: units_between(line, from, to),
         })
     }
 
@@ -141,17 +144,35 @@ impl BigFile {
     }
 }
 
+/// A line is read as UTF-8 when it is valid UTF-8, otherwise as Windows-1252, one character per byte.
+fn is_single_byte(line: &[u8]) -> bool {
+    std::str::from_utf8(line).is_err()
+}
+
 /// Turns a column counted in UTF-16 units into a byte offset within the line.
 fn byte_of_column(line: &[u8], col: usize) -> usize {
-    let text = String::from_utf8_lossy(line);
+    if is_single_byte(line) {
+        // Every Windows-1252 character is one byte and one UTF-16 unit.
+        return col.min(line.len());
+    }
+    let text = std::str::from_utf8(line).unwrap_or_default();
     let mut units = 0;
     for (index, ch) in text.char_indices() {
         if units >= col {
-            return index.min(line.len());
+            return index;
         }
         units += ch.len_utf16();
     }
     line.len()
+}
+
+/// How many UTF-16 units the bytes from `start` to `end` of a line take on screen.
+fn units_between(line: &[u8], start: usize, end: usize) -> usize {
+    if is_single_byte(line) {
+        end - start
+    } else {
+        String::from_utf8_lossy(&line[start..end]).encode_utf16().count()
+    }
 }
 
 fn show(line: &[u8]) -> String {
@@ -181,6 +202,8 @@ pub fn build_pattern(what: &str, mode: &str, match_case: bool, whole_word: bool)
     RegexBuilder::new(&source)
         .case_insensitive(!match_case)
         .multi_line(true)
+        // `$` also matches before a CR, so Windows line endings behave like Unix ones.
+        .crlf(true)
         // Matching on raw bytes lets the search run over text that is not valid UTF-8.
         .unicode(true)
         .build()
@@ -318,6 +341,21 @@ mod tests {
         assert!(lines[0].ends_with("(line cut for display)"));
         assert!(lines[0].len() < MAX_LINE_BYTES + 100);
         assert_eq!(lines[1], "café");
+        drop(file);
+        fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn columns_follow_the_shown_text_on_single_byte_lines() {
+        let path = sample("cp1252", b"caf\xE9 neon caf\xE9 neon\n");
+        let file = BigFile::open(&path).unwrap();
+        let pattern = build_pattern("neon", "normal", false, false).unwrap();
+        let first = file.find(&pattern, 0, 0, false).unwrap();
+        assert_eq!(first, BigHit { line: 0, col: 5, len: 4 });
+        let shown: String = file.read(0, 1)[0].chars().skip(5).take(4).collect();
+        assert_eq!(shown, "neon");
+        let second = file.find(&pattern, 0, first.col + first.len, false).unwrap();
+        assert_eq!(second.col, 15);
         drop(file);
         fs::remove_file(path).unwrap();
     }

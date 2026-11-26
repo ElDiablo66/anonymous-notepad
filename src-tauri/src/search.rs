@@ -105,6 +105,8 @@ pub fn build_pattern(what: &str, mode: &str, match_case: bool, whole_word: bool)
     RegexBuilder::new(&source)
         .case_insensitive(!match_case)
         .multi_line(true)
+        // `$` also matches before a CR, so Windows line endings behave like Unix ones.
+        .crlf(true)
         .build()
         .map_err(|e| format!("The search pattern is not valid: {e}"))
 }
