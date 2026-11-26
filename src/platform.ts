@@ -326,3 +326,53 @@ export async function onUpdateProgress(handler: (done: number, total: number) =>
   const { listen } = await import("@tauri-apps/api/event");
   return listen<[number, number]>("update-progress", (event) => handler(event.payload[0], event.payload[1]));
 }
+
+// Replace in files: a preview first, then the chosen files are rewritten.
+
+export interface LineChange {
+  line: number;
+  before: string;
+  after: string;
+}
+
+export interface FileChange {
+  path: string;
+  fingerprint: string;
+  count: number;
+  encoding: string;
+  lines: LineChange[];
+}
+
+export interface ReplacePlan {
+  files: FileChange[];
+  files_searched: number;
+  total: number;
+  truncated: boolean;
+}
+
+export interface Applied {
+  path: string;
+  count: number;
+  error: string | null;
+}
+
+export async function replacePreview(options: FindOptions, replace: string): Promise<ReplacePlan> {
+  if (desktop) return call<ReplacePlan>("replace_preview", { options, replace });
+  // A made-up plan so the panel can be looked at in a browser.
+  const before = (n: number) => `const station = tune(${n}); // ${options.what}`;
+  return {
+    files_searched: 128,
+    total: 7,
+    truncated: false,
+    files: [
+      { path: `${options.dir}\\src\\radio.rs`, fingerprint: "a", count: 4, encoding: "UTF-8", lines: [1, 9, 14, 30].map((line) => ({ line, before: before(line), after: before(line).replaceAll(options.what, replace) })) },
+      { path: `${options.dir}\\notes.md`, fingerprint: "b", count: 2, encoding: "UTF-8", lines: [3, 8].map((line) => ({ line, before: before(line), after: before(line).replaceAll(options.what, replace) })) },
+      { path: `${options.dir}\\old\\legacy.txt`, fingerprint: "c", count: 1, encoding: "windows-1252", lines: [{ line: 2, before: before(2), after: before(2).replaceAll(options.what, replace) }] },
+    ],
+  };
+}
+
+export async function replaceApply(options: FindOptions, replace: string, files: { path: string; fingerprint: string }[]): Promise<Applied[]> {
+  if (desktop) return call<Applied[]>("replace_apply", { options, replace, files });
+  return files.map((file) => ({ path: file.path, count: 1, error: null }));
+}

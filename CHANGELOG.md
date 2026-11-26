@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.1, 26 November 2026
+
+Added
+
+- Replace in files (`Ctrl+Shift+H`, or the "Replace in files" tab of the find panel). It shows every change first, line by line with the old and the new text, and lets you leave files out. Nothing is written until you confirm. A file that changed on disk after the preview, is read-only, or is open in a tab with unsaved edits is left alone. Each file keeps its encoding, byte order mark and line endings, and is written through a temporary file so a crash cannot leave half a file.
+- Marks on the scrollbar: search matches while the find panel or results are open, bookmarks, the five highlight colours, and the cursor's place in the file.
+
 ## 0.4.0, 26 November 2026
 
 Added

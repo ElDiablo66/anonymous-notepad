@@ -5,12 +5,14 @@ import { gotoLine } from "../editops";
 import * as files from "../files";
 import * as platform from "../platform";
 import * as search from "../search";
+import { previewReplace } from "./ReplacePreview";
 import { activeDoc, type FindTab, get, type Hit, set, useStore } from "../store";
 
 const tabs: { id: FindTab; label: string }[] = [
   { id: "find", label: "Find" },
   { id: "replace", label: "Replace" },
   { id: "files", label: "Find in files" },
+  { id: "replaceFiles", label: "Replace in files" },
   { id: "mark", label: "Mark" },
 ];
 
@@ -38,6 +40,7 @@ export function FindPanel() {
     setOptions((current) => {
       const next = { ...current, ...patch };
       Object.assign(search.lastFind, next);
+      queueMicrotask(search.searchChanged);
       return next;
     });
     setMessage(null);
@@ -75,23 +78,42 @@ export function FindPanel() {
     showResults(`"${options.what}" in ${everyOpenDoc ? "open files" : (activeDoc()?.name ?? "this file")}`, hits);
   };
 
+  const inFiles = tab === "files" || tab === "replaceFiles";
+
+  const folderOptions = (): platform.FindOptions => ({
+    dir: directory,
+    what: options.what,
+    mode: options.mode,
+    matchCase: options.matchCase,
+    wholeWord: options.wholeWord,
+    filters: filters === "*.*" ? "" : filters,
+    subfolders,
+    hidden,
+    maxHits: 5000,
+  });
+
+  const replaceInFiles = async () => {
+    if (!options.what) return;
+    if (!directory) return setMessage({ text: "Choose a folder to search", bad: true });
+    setBusy(true);
+    setMessage({ text: "Working out the changes…" });
+    try {
+      await previewReplace(folderOptions(), options.replace);
+      setMessage(null);
+    } catch (error) {
+      setMessage({ text: error instanceof Error ? error.message : String(error), bad: true });
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const findInFiles = async () => {
     if (!options.what) return;
     if (!directory) return setMessage({ text: "Choose a folder to search", bad: true });
     setBusy(true);
     setMessage({ text: "Searching…" });
     try {
-      const result = await platform.findInFiles({
-        dir: directory,
-        what: options.what,
-        mode: options.mode,
-        matchCase: options.matchCase,
-        wholeWord: options.wholeWord,
-        filters: filters === "*.*" ? "" : filters,
-        subfolders,
-        hidden,
-        maxHits: 5000,
-      });
+      const result = await platform.findInFiles(folderOptions());
       const hits: Hit[] = result.hits.map((hit) => ({ ...hit, label: hit.path }));
       const note = `${result.files_with_hits} of ${result.files_searched} files${result.truncated ? ", stopped at 5,000 matches" : ""}`;
       showResults(`"${options.what}" in ${directory}`, hits, note);
@@ -106,6 +128,7 @@ export function FindPanel() {
     if (event.key === "Enter") {
       event.preventDefault();
       if (tab === "files") void findInFiles();
+      else if (tab === "replaceFiles") void replaceInFiles();
       else if (tab === "mark") runMark();
       else report(search.findNext(options, event.shiftKey));
     } else if (event.key === "Escape") {
@@ -165,17 +188,23 @@ export function FindPanel() {
               onChange={(event) => update({ what: event.target.value })}
             />
           </label>
-          {tab === "replace" || tab === "files" ? (
-            <label className={`field${tab === "files" ? " is-muted" : ""}`}>
-              <span>{tab === "files" ? "Filters" : "Replace with"}</span>
-              {tab === "files" ? (
+          {tab === "replaceFiles" ? (
+            <label className="field">
+              <span>Replace with</span>
+              <input value={options.replace} spellCheck={false} onChange={(event) => update({ replace: event.target.value })} />
+            </label>
+          ) : null}
+          {tab === "replace" || inFiles ? (
+            <label className={`field${inFiles ? " is-muted" : ""}`}>
+              <span>{inFiles ? "Filters" : "Replace with"}</span>
+              {inFiles ? (
                 <input value={filters} spellCheck={false} placeholder="*.txt; *.md; !*.log" onChange={(event) => setFilters(event.target.value)} />
               ) : (
                 <input value={options.replace} spellCheck={false} onChange={(event) => update({ replace: event.target.value })} />
               )}
             </label>
           ) : null}
-          {tab === "files" ? (
+          {inFiles ? (
             <label className="field">
               <span>Folder</span>
               <input value={directory} spellCheck={false} onChange={(event) => setDirectory(event.target.value)} />
@@ -212,10 +241,10 @@ export function FindPanel() {
           <div className="find-options">
             {check("Match case", options.matchCase, (v) => update({ matchCase: v }))}
             {check("Whole word", options.wholeWord, (v) => update({ wholeWord: v }))}
-            {tab !== "files" ? check("Wrap around", options.wrap, (v) => update({ wrap: v })) : null}
-            {tab !== "files" ? check("In selection", options.inSelection, (v) => update({ inSelection: v })) : null}
-            {tab === "files" ? check("Sub-folders", subfolders, setSubfolders) : null}
-            {tab === "files" ? check("Hidden folders", hidden, setHidden) : null}
+            {!inFiles ? check("Wrap around", options.wrap, (v) => update({ wrap: v })) : null}
+            {!inFiles ? check("In selection", options.inSelection, (v) => update({ inSelection: v })) : null}
+            {inFiles ? check("Sub-folders", subfolders, setSubfolders) : null}
+            {inFiles ? check("Hidden folders", hidden, setHidden) : null}
             {tab === "mark" ? check("Bookmark lines", bookmarkLines, setBookmarkLines) : null}
             {tab === "mark" ? check("Clear this colour first", purge, setPurge) : null}
             <div className="seg seg-small" role="radiogroup" aria-label="Search mode">
@@ -311,6 +340,14 @@ export function FindPanel() {
             <button type="button" className="btn btn-go" disabled={busy} onClick={() => void findInFiles()}>
               {busy ? "Searching…" : "Find all"}
             </button>
+          ) : null}
+          {tab === "replaceFiles" ? (
+            <>
+              <button type="button" className="btn btn-go" disabled={busy} onClick={() => void replaceInFiles()}>
+                {busy ? "Working out the changes…" : "Preview changes"}
+              </button>
+              <p className="find-hint">Nothing is written until you confirm the preview.</p>
+            </>
           ) : null}
           {tab === "mark" ? (
             <>

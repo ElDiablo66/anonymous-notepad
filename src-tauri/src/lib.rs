@@ -1,5 +1,6 @@
 pub mod bigfile;
 pub mod files;
+pub mod replace;
 pub mod search;
 mod update;
 
@@ -152,6 +153,8 @@ pub fn run() {
             files::rename_file,
             files::trash_file,
             search::find_in_files,
+            replace::replace_preview,
+            replace::replace_apply,
             bigfile::big_open,
             bigfile::big_read,
             bigfile::big_find,

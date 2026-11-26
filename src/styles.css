@@ -1047,6 +1047,80 @@ input[type="number"] {
   border-radius: 2px;
 }
 
+/* Marks on the scrollbar track */
+
+.cm-scrollmarks {
+  position: absolute;
+  right: 0;
+  width: 11px;
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* Replace in files preview */
+
+.rp .dock-head .btn-row {
+  flex: none;
+}
+.rp summary.is-off .results-file {
+  color: var(--text-soft);
+  text-decoration: line-through;
+}
+.rp-check {
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+}
+.rp-check:disabled {
+  color: var(--text-soft);
+  cursor: not-allowed;
+}
+.rp-line {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr);
+  column-gap: 10px;
+  padding: 2px 6px 4px 18px;
+  font: 12px/1.6 var(--mono);
+  font-variant-ligatures: none;
+}
+.rp-before,
+.rp-after {
+  white-space: pre;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 6px;
+  border-radius: 3px;
+}
+.rp-before {
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, var(--danger) 60%, transparent);
+}
+.rp-after {
+  background: color-mix(in srgb, var(--syn-escape) 16%, transparent);
+}
+.rp-more {
+  padding: 0 0 6px 82px;
+  color: var(--text-soft);
+  font-size: 12px;
+}
+.rp-warn {
+  margin: 4px 6px 8px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--sun-mid) 16%, var(--panel));
+}
+.rp-error {
+  display: grid;
+  gap: 2px;
+  padding: 5px 8px;
+  color: var(--danger);
+}
+.find-hint {
+  color: var(--text-soft);
+  font-size: 12px;
+}
+
 /* Side panel */
 
 .side {

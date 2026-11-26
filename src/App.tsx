@@ -5,6 +5,7 @@ import { Logo, Postcard, Sunset } from "./components/Art";
 import { BigViewer } from "./components/BigViewer";
 import { StartScreen, Toolbar } from "./components/Chrome";
 import { FindPanel, ResultsPanel } from "./components/FindPanel";
+import { ReplacePreview } from "./components/ReplacePreview";
 import { AskDialog, Picker, Sheet, Toast } from "./components/Overlays";
 import { SidePanel } from "./components/SidePanel";
 import { StatusBar } from "./components/StatusBar";
@@ -13,6 +14,7 @@ import { applySettings, hooks, mount, remeasure, show, unmount } from "./editor/
 import { demo, demoPanel, seedDemo } from "./demo";
 import * as files from "./files";
 import * as platform from "./platform";
+import { searchChanged } from "./search";
 import { installUpdate, watchForUpdates } from "./updates";
 import { setUiScale, sizeForWindow } from "./scale";
 import { get, onChange, patchDoc, set, useStore } from "./store";
@@ -129,6 +131,10 @@ export function App() {
   }, [windowWidth, ui]);
 
   useEffect(() => {
+    searchChanged();
+  }, [bottom]);
+
+  useEffect(() => {
     const refit = () => {
       setFitted(sizeForWindow());
       setWindowWidth(window.innerWidth);
@@ -240,6 +246,7 @@ export function App() {
           <EditorPane />
           {bottom === "find" ? <FindPanel /> : null}
           {bottom === "results" ? <ResultsPanel /> : null}
+          {bottom === "preview" ? <ReplacePreview /> : null}
         </div>
         <Sheet />
       </div>

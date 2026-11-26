@@ -118,6 +118,15 @@ export async function seedDemo(): Promise<void> {
 
   const side = params.get("side");
   if (side === "docs" || side === "functions" || side === "folder") set({ side: side as SidePanel });
+  if (demoPanel === "replaceFiles") {
+    lastFind.what = "station";
+    lastFind.replace = "stop";
+    set({ bottom: "find", findTab: "replaceFiles" });
+  }
+  if (demoPanel === "preview") {
+    const { previewReplace } = await import("./components/ReplacePreview");
+    await previewReplace({ dir: "C:\\Projects\\night-drive", what: "station", mode: "normal", matchCase: false, wholeWord: false, filters: "", subfolders: true, hidden: false, maxHits: 5000 }, "stop");
+  }
   if (demoPanel === "find" || demoPanel === "replace") {
     lastFind.what = "station";
     set({ bottom: "find", findTab: demoPanel });

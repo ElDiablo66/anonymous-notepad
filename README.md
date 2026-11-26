@@ -46,6 +46,8 @@ The feature list comes from reading what Notepad++ and Windows Notepad users ask
 - Syntax colours for 143 languages, picked from the file name or by hand (`Ctrl+Shift+G`).
 - Find and replace in normal, extended (`\n`, `\t`, `\x41`) and regular expression mode, with a count, find all in open files and a results list you can click through.
 - Find in files runs across a folder on every processor core, with name filters such as `*.rs; *.toml; !*.lock`.
+- Replace in files shows every change first, old and new line side by side, and writes nothing until you confirm. Files that changed since the preview, are read-only or have unsaved edits in a tab are left alone.
+- Marks on the scrollbar show where the search matches, bookmarks and highlight colours are in the whole file.
 - Files over 50 MB open in a read-only viewer that reads only the lines on screen, with its own go-to-line and find.
 - Bookmarks in the margin, and five highlight colours for marking every occurrence of a word.
 - Line tools: 14 sorts, remove duplicates, remove empty lines, reverse, shuffle, join, split, trim, tabs to spaces and back.
@@ -120,7 +122,7 @@ From 0.4.0 on the app updates itself from this repository's releases; Preference
 | --- | --- |
 | Command list | `Ctrl+Shift+P` |
 | Next theme station | `Ctrl+Alt+T` |
-| Find, replace, find in files | `Ctrl+F`, `Ctrl+H`, `Ctrl+Shift+F` |
+| Find, replace, find in files, replace in files | `Ctrl+F`, `Ctrl+H`, `Ctrl+Shift+F`, `Ctrl+Shift+H` |
 | Go to line | `Ctrl+G` |
 | Toggle, next, previous bookmark | `Ctrl+F2`, `F2`, `Shift+F2` |
 | Duplicate line, delete line | `Ctrl+D`, `Ctrl+Shift+L` |
@@ -144,8 +146,8 @@ The only network request the app makes is the update check: it fetches `latest.j
 
 - The installed app has had little real-world use so far. Expect rough edges and please [report them](https://github.com/ElDiablo66/anonymous-notepad/issues).
 - The editor keeps the whole file in memory, which is why files over 50 MB go to the read-only viewer. The viewer reads UTF-8 and single-byte text and refuses UTF-16. It shows the file as it was when opened and doesn't follow a file that is still growing.
-- Find in files uses Rust regular expressions and find in the editor uses JavaScript ones, so lookbehind and backreferences work in the editor only.
-- No printing, macro recording, split view, plugins or replace in files yet. See the [roadmap](docs/roadmap.md).
+- Find and replace in files use Rust regular expressions and find in the editor uses JavaScript ones, so lookbehind and backreferences work in the editor only.
+- No printing, macro recording, split view or plugins yet. See the [roadmap](docs/roadmap.md).
 - The outline is pattern based. It covers 30 languages and can miss unusual code layouts.
 
 ## Build from source

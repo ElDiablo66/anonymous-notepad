@@ -23,6 +23,13 @@ These were picked first because each is visible on the first launch or fixes a t
 
 True since 0.1.0 and worth saying: the installer needs no administrator rights, and there is no account or assistant. Since 0.4.0 the only network request is the signed update check, which can be turned off.
 
+## Shipped in 0.4.1
+
+| Idea | The need it answers | Effort | Kind |
+| --- | --- | --- | --- |
+| Match markers on the scrollbar for search hits, bookmarks and highlight colours | Requested in Notepad++ since 2017 | Medium | Both |
+| Replace in files, with a preview of every change before it is written | The biggest missing search feature | Medium | Function |
+
 ## Shipped in 0.4.0
 
 | Idea | The need it answers | Effort | Kind |
@@ -47,10 +54,8 @@ True since 0.1.0 and worth saying: the installer needs no administrator rights, 
 
 | # | Idea | The need it answers | Effort | Kind |
 | --- | --- | --- | --- | --- |
-| 1 | Match markers on the scrollbar, in the accent colour, for search hits and bookmarks | Requested in Notepad++ since 2017 | Medium | Both |
 | 2 | Burner tab: a tab that is never written to the session file | Windows Notepad's session restore has leaked private text | Low | Both |
 | 3 | Format XML | The other half of the most-used formatter plugins | Low | Function |
-| 4 | Replace in files, with a preview of every change before it is written | The biggest missing search feature | Medium | Function |
 | 6 | Compare two tabs side by side | Compare is the plugin people install first | Medium | Function |
 | 7 | Markdown preview beside the text | Praised in VS Code; Windows Notepad's Markdown is toolbar-driven | Medium | Function |
 | 8 | Mixtapes: named, coloured groups of tabs you can collapse | Tab groups are a top open request in Notepad++ | Medium | Both |

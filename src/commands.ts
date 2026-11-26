@@ -474,6 +474,7 @@ add({
 add({ id: "search.find", title: "Find…", keys: "Ctrl+F", run: () => openFind("find") });
 add({ id: "search.replace", title: "Replace…", keys: "Ctrl+H", run: () => openFind("replace") });
 add({ id: "search.findInFiles", title: "Find in files…", keys: "Ctrl+Shift+F", run: () => openFind("files") });
+add({ id: "search.replaceInFiles", title: "Replace in files…", keys: "Ctrl+Shift+H", run: () => openFind("replaceFiles") });
 add({ id: "search.mark", title: "Mark…", keys: "Ctrl+M", run: () => openFind("mark") });
 add({
   id: "search.next",
@@ -787,6 +788,7 @@ export const menus: Menu[] = [
       "search.selectedNext",
       "search.selectedPrevious",
       "search.replace",
+      "search.replaceInFiles",
       "search.mark",
       "search.results",
       "-",

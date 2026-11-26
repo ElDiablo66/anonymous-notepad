@@ -31,6 +31,7 @@ import { indentationMarkers } from "@replit/codemirror-indentation-markers";
 import { showMinimap } from "@replit/codemirror-minimap";
 import { type Eol, get, patchDoc, set, type Settings } from "../store";
 import { bookmarkPositions, bookmarks, look, marks, setBookmarks } from "./extras";
+import { scrollMarks } from "./scrollmarks";
 
 export const PLAIN = "Plain text";
 
@@ -167,6 +168,7 @@ function baseExtensions(id: string, readOnly: boolean): Extension[] {
     crosshairCursor(),
     highlightSelectionMatches({ minSelectionLength: 2 }),
     marks,
+    scrollMarks,
     look,
     overwrite,
     watcher,

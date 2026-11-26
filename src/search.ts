@@ -4,6 +4,7 @@ import { SearchQuery } from "@codemirror/search";
 import { EditorSelection, type EditorState } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { dispatchTo, getView, stateOf } from "./editor/core";
+import { refreshScrollMarks, scrollSearch } from "./editor/scrollmarks";
 import { addMarks, bookmarkPositions, clearMarks, setBookmarks, type Span } from "./editor/extras";
 import { get, type Hit } from "./store";
 import { unescapeExtended } from "./textops";
@@ -248,4 +249,24 @@ export function selectionSeed(): string {
   const main = view.state.selection.main;
   const text = view.state.sliceDoc(main.from, main.to);
   return text.includes("\n") || text.length > 200 ? "" : text;
+}
+
+const SCROLL_MARK_LIMIT = 10000;
+
+scrollSearch.matches = (state) => {
+  const panel = get().bottom;
+  if (panel !== "find" && panel !== "results") return null;
+  const query = buildQuery(lastFind);
+  if (!query) return null;
+  const out: number[] = [];
+  const cursor = query.getCursor(state);
+  for (let step = cursor.next(); !step.done && out.length < SCROLL_MARK_LIMIT; step = cursor.next()) {
+    if (step.value.to > step.value.from) out.push(step.value.from);
+  }
+  return out;
+};
+
+/** Redraws the scrollbar marks after the search text or options changed. */
+export function searchChanged(): void {
+  refreshScrollMarks(getView());
 }

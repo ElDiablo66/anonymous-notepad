@@ -164,7 +164,7 @@ impl Filters {
     }
 }
 
-fn is_hidden(path: &Path, depth: usize) -> bool {
+pub fn is_hidden(path: &Path, depth: usize) -> bool {
     if depth == 0 {
         return false;
     }
@@ -185,7 +185,7 @@ fn has_utf16_mark(bytes: &[u8]) -> bool {
     bytes.starts_with(&[0xFF, 0xFE]) || bytes.starts_with(&[0xFE, 0xFF])
 }
 
-fn looks_binary(bytes: &[u8]) -> bool {
+pub fn looks_binary(bytes: &[u8]) -> bool {
     !has_utf16_mark(bytes) && bytes.iter().take(8192).any(|&b| b == 0)
 }
 

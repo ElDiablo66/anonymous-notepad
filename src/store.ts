@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import type { FindOptions, ReplacePlan } from "./platform";
 import type { ThemeId } from "./themes";
 
 export type Eol = "CRLF" | "LF" | "CR";
@@ -104,8 +105,8 @@ export interface CursorInfo {
 }
 
 export type SidePanel = "none" | "folder" | "docs" | "functions";
-export type BottomPanel = "none" | "find" | "results";
-export type FindTab = "find" | "replace" | "files" | "mark";
+export type BottomPanel = "none" | "find" | "results" | "preview";
+export type FindTab = "find" | "replace" | "files" | "replaceFiles" | "mark";
 export type SheetName = "preferences" | "hash" | "summary" | "column" | "about" | "shortcuts";
 
 export interface PickItem {
@@ -153,6 +154,7 @@ export interface AppState {
   findNonce: number;
   /** A newer version found on GitHub and not installed yet. */
   update: { version: string; notes: string; busy: boolean } | null;
+  replacePreview: { options: FindOptions; replace: string; plan: ReplacePlan } | null;
 }
 
 let state: AppState = {
@@ -177,6 +179,7 @@ let state: AppState = {
   textVersion: 0,
   findNonce: 0,
   update: null,
+  replacePreview: null,
 };
 
 const listeners = new Set<() => void>();
