@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import type { ThemeId } from "./themes";
 
 export type Eol = "CRLF" | "LF" | "CR";
 
@@ -21,7 +22,11 @@ export interface Doc {
 }
 
 export interface Settings {
-  theme: "vice-night" | "ocean-drive" | "golden-hour";
+  theme: ThemeId;
+  /** How much neon: none, on the interface only, or on the code as well. */
+  glow: "off" | "soft" | "full";
+  toolbar: boolean;
+  startScreen: boolean;
   fontSize: number;
   tabSize: number;
   insertSpaces: boolean;
@@ -35,11 +40,16 @@ export interface Settings {
   autoClose: boolean;
   backgroundArt: boolean;
   restoreSession: boolean;
+  /** Writes changed files that already have a place on disk when the window loses focus. */
+  saveOnBlur: boolean;
   searchEngine: string;
 }
 
 export const defaultSettings: Settings = {
   theme: "vice-night",
+  glow: "soft",
+  toolbar: true,
+  startScreen: true,
   fontSize: 14,
   tabSize: 4,
   insertSpaces: false,
@@ -53,6 +63,7 @@ export const defaultSettings: Settings = {
   autoClose: true,
   backgroundArt: true,
   restoreSession: true,
+  saveOnBlur: false,
   searchEngine: "https://duckduckgo.com/?q=",
 };
 

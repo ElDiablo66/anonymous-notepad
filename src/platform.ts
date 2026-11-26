@@ -127,7 +127,7 @@ export async function hashFiles(algorithm: string, paths: string[]): Promise<Fil
   return [];
 }
 
-export async function storeLoad(name: "session" | "settings"): Promise<string | null> {
+export async function storeLoad(name: "session" | "settings" | "session-backup"): Promise<string | null> {
   if (desktop) return call<string | null>("store_load", { name });
   try {
     return localStorage.getItem(`anonymous-notepad-${name}`);

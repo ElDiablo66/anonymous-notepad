@@ -1,6 +1,23 @@
+# Dependencies and build output
 node_modules/
 dist/
 src-tauri/target/
 src-tauri/gen/
-*.log
+
+# Written by "npm run notices" before every build
+src-tauri/resources/
+
+# Local files
 .env
+.env.*
+*.log
+*.tsbuildinfo
+coverage/
+
+# Editors and operating systems
+.vscode/
+.idea/
+*.swp
+Thumbs.db
+desktop.ini
+.DS_Store

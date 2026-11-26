@@ -225,3 +225,25 @@ export function dateTimeLong(now: Date): string {
 export function dateTimeIso(now: Date): string {
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
 }
+
+/** Re-indents JSON. Throws with the parser's message when the text is not valid JSON. */
+export function formatJson(text: string, indent: string | number): string {
+  return JSON.stringify(JSON.parse(text), null, indent);
+}
+
+export function minifyJson(text: string): string {
+  return JSON.stringify(JSON.parse(text));
+}
+
+export function base64Encode(text: string): string {
+  let binary = "";
+  for (const byte of new TextEncoder().encode(text)) binary += String.fromCharCode(byte);
+  return btoa(binary);
+}
+
+/** Decodes Base64 holding UTF-8 text. Throws when the input is not Base64 or not text. */
+export function base64Decode(text: string): string {
+  const binary = atob(text.replace(/\s+/g, ""));
+  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+  return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+}

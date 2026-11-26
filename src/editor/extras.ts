@@ -133,27 +133,26 @@ export function markedSpans(state: EditorState, style: number): Span[] {
   return out;
 }
 
-// Colours come from CSS variables so the three themes share one definition.
+// Tokens get fixed class names; their colours and glow live in styles.css with the themes.
 const highlight = HighlightStyle.define([
-  { tag: [t.keyword, t.operatorKeyword, t.modifier, t.controlKeyword, t.definitionKeyword, t.moduleKeyword], color: "var(--syn-keyword)" },
-  { tag: [t.string, t.special(t.string), t.character, t.attributeValue], color: "var(--syn-string)" },
-  { tag: [t.regexp, t.escape], color: "var(--syn-escape)" },
-  { tag: [t.number, t.bool, t.null, t.atom, t.unit], color: "var(--syn-number)" },
-  { tag: [t.comment, t.lineComment, t.blockComment, t.docComment, t.meta], color: "var(--syn-comment)", fontStyle: "italic" },
-  { tag: [t.function(t.variableName), t.function(t.propertyName), t.macroName], color: "var(--syn-function)" },
-  { tag: [t.typeName, t.className, t.namespace, t.standard(t.typeName)], color: "var(--syn-type)" },
-  { tag: [t.tagName, t.angleBracket], color: "var(--syn-tag)" },
-  { tag: [t.attributeName, t.propertyName], color: "var(--syn-property)" },
-  { tag: [t.operator, t.punctuation, t.separator, t.bracket], color: "var(--syn-punctuation)" },
-  { tag: [t.definition(t.variableName), t.constant(t.variableName), t.labelName], color: "var(--syn-constant)" },
-  { tag: t.heading, color: "var(--syn-keyword)", fontWeight: "600" },
-  { tag: t.link, color: "var(--syn-function)", textDecoration: "underline" },
-  { tag: t.url, color: "var(--syn-function)" },
-  { tag: t.emphasis, fontStyle: "italic" },
-  { tag: t.strong, fontWeight: "600" },
-  { tag: t.strikethrough, textDecoration: "line-through" },
-  { tag: [t.inserted], color: "var(--syn-string)" },
-  { tag: [t.deleted, t.invalid], color: "var(--syn-invalid)" },
+  { tag: [t.keyword, t.operatorKeyword, t.modifier, t.controlKeyword, t.definitionKeyword, t.moduleKeyword], class: "tk-keyword" },
+  { tag: [t.string, t.special(t.string), t.character, t.attributeValue], class: "tk-string" },
+  { tag: [t.regexp, t.escape], class: "tk-escape" },
+  { tag: [t.number, t.bool, t.null, t.atom, t.unit], class: "tk-number" },
+  { tag: [t.comment, t.lineComment, t.blockComment, t.docComment, t.meta], class: "tk-comment" },
+  { tag: [t.function(t.variableName), t.function(t.propertyName), t.macroName], class: "tk-function" },
+  { tag: [t.typeName, t.className, t.namespace, t.standard(t.typeName)], class: "tk-type" },
+  { tag: [t.tagName, t.angleBracket], class: "tk-tag" },
+  { tag: [t.attributeName, t.propertyName], class: "tk-property" },
+  { tag: [t.operator, t.punctuation, t.separator, t.bracket], class: "tk-punctuation" },
+  { tag: [t.definition(t.variableName), t.constant(t.variableName), t.labelName], class: "tk-constant" },
+  { tag: t.heading, class: "tk-heading" },
+  { tag: [t.link, t.url], class: "tk-link" },
+  { tag: t.emphasis, class: "tk-emphasis" },
+  { tag: t.strong, class: "tk-strong" },
+  { tag: t.strikethrough, class: "tk-strike" },
+  { tag: [t.inserted], class: "tk-string" },
+  { tag: [t.deleted, t.invalid], class: "tk-invalid" },
 ]);
 
 const chrome = EditorView.theme(

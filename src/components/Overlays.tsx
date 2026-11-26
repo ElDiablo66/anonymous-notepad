@@ -6,7 +6,8 @@ import { columnInsert, selectedText } from "../editops";
 import * as platform from "../platform";
 import { activeDoc, defaultSettings, set, setSetting, type Settings, type SheetName, toast, useStore } from "../store";
 import { numberColumn, summarize } from "../textops";
-import { Logo, Sunset } from "./Art";
+import { stations } from "../themes";
+import { Logo, Postcard } from "./Art";
 
 declare const __APP_VERSION__: string;
 
@@ -157,12 +158,6 @@ function Toggle({ name, label, hint }: { name: keyof Settings; label: string; hi
   );
 }
 
-const themes: { id: Settings["theme"]; label: string; note: string }[] = [
-  { id: "vice-night", label: "Vice night", note: "Violet dusk, pink neon" },
-  { id: "ocean-drive", label: "Ocean drive", note: "Deep sea blue, teal neon" },
-  { id: "golden-hour", label: "Golden hour", note: "Warm plum, orange sun" },
-];
-
 function Preferences() {
   const settings = useStore((s) => s.settings);
   const number = (name: "fontSize" | "tabSize", min: number, max: number) => (
@@ -184,7 +179,7 @@ function Preferences() {
     <>
       <h3>Look</h3>
       <div className="theme-row" role="radiogroup" aria-label="Theme">
-        {themes.map((theme) => (
+        {stations.map((theme) => (
           <button
             key={theme.id}
             type="button"
@@ -194,8 +189,8 @@ function Preferences() {
             onClick={() => setSetting("theme", theme.id)}
           >
             <span className="theme-swatch" />
-            <strong>{theme.label}</strong>
-            <small>{theme.note}</small>
+            <strong>{theme.name}</strong>
+            <small>{theme.frequency.toFixed(1)} on the dial</small>
           </button>
         ))}
       </div>
@@ -206,7 +201,22 @@ function Preferences() {
         </span>
         {number("fontSize", 8, 40)}
       </label>
+      <div className="pref">
+        <span>
+          <strong>Neon glow</strong>
+          <small>Full also lights up the code itself</small>
+        </span>
+        <div className="seg seg-small" role="radiogroup" aria-label="Neon glow">
+          {(["off", "soft", "full"] as const).map((level) => (
+            <button key={level} type="button" role="radio" aria-checked={settings.glow === level} className={settings.glow === level ? "is-on" : ""} onClick={() => setSetting("glow", level)}>
+              {level === "off" ? "Off" : level === "soft" ? "Soft" : "Full"}
+            </button>
+          ))}
+        </div>
+      </div>
       <Toggle name="backgroundArt" label="Sunset in the corner" hint="A faint drawing behind the text" />
+      <Toggle name="toolbar" label="Toolbar" hint="The row of icons beside the menu" />
+      <Toggle name="startScreen" label="Start screen" hint="Shown while the only tab is empty" />
       <Toggle name="lineNumbers" label="Line numbers" />
       <Toggle name="highlightLine" label="Highlight the current line" />
       <Toggle name="indentGuides" label="Indent guides" />
@@ -225,6 +235,9 @@ function Preferences() {
       <Toggle name="wordWrap" label="Word wrap" />
       <Toggle name="autoComplete" label="Suggest completions while typing" />
       <Toggle name="autoClose" label="Close brackets and quotes" />
+
+      <h3>Saving</h3>
+      <Toggle name="saveOnBlur" label="Save when the window loses focus" hint="Only files that already have a place on disk" />
 
       <h3>Start-up</h3>
       <Toggle name="restoreSession" label="Reopen tabs from last time" hint="Unsaved text is kept too, so closing the app never asks" />
@@ -456,14 +469,18 @@ function Shortcuts() {
 function About() {
   return (
     <div className="about">
-      <Sunset className="about-art" label="A striped sun setting between two palm trees" />
+      <Postcard className="about-art" label="A striped sun setting behind a city skyline and palm trees" />
       <p className="wordmark">Anonymous Notepad</p>
       <p className="about-version">Version {__APP_VERSION__}</p>
       <p>
         A text and code editor with tabs that come back after a restart, search across files, line tools and syntax colours for more than a hundred
         languages.
       </p>
-      <p>The file work runs in Rust. The editor is built on CodeMirror 6. Made by El Diablo 59.</p>
+      <p>The file work runs in Rust. The editor is built on CodeMirror 6. Made by El Diablo 59 and released under the MIT licence.</p>
+      <p className="about-small">
+        A fan-made project. It is not affiliated with, endorsed by or connected to Rockstar Games or Take-Two Interactive, and it contains none of
+        their artwork, fonts or code. The licences of the packages it is built on are in the file third-party notices.txt in the install folder.
+      </p>
     </div>
   );
 }

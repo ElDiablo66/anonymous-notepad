@@ -1,16 +1,18 @@
 import { useEffect, useRef } from "react";
 import { handleKey, type MenuItem } from "./commands";
 import { ContextMenu, MenuBar, openContextMenu } from "./components/Menus";
-import { Logo, Sunset } from "./components/Art";
+import { Logo, Postcard, Sunset } from "./components/Art";
+import { StartScreen, Toolbar } from "./components/Chrome";
 import { FindPanel, ResultsPanel } from "./components/FindPanel";
 import { AskDialog, Picker, Sheet, Toast } from "./components/Overlays";
 import { SidePanel } from "./components/SidePanel";
 import { StatusBar } from "./components/StatusBar";
 import { TabBar } from "./components/TabBar";
 import { applySettings, hooks, mount, remeasure, show, unmount } from "./editor/core";
+import { demo, demoPanel, seedDemo } from "./demo";
 import * as files from "./files";
 import * as platform from "./platform";
-import { onChange, patchDoc, set, useStore } from "./store";
+import { get, onChange, patchDoc, set, useStore } from "./store";
 
 const editorMenu: MenuItem[] = [
   "edit.cut",
@@ -36,6 +38,9 @@ function EditorPane() {
   const activeId = useStore((s) => s.activeId);
   const doc = useStore((s) => s.docs.find((d) => d.id === s.activeId));
   const art = useStore((s) => s.settings.backgroundArt);
+  const start = useStore(
+    (s) => s.settings.startScreen && s.docs.length === 1 && !s.docs[0].path && !s.docs[0].dirty && s.cursor.length === 0 && s.sheet === null,
+  );
 
   useEffect(() => {
     if (!host.current) return;
@@ -62,7 +67,8 @@ function EditorPane() {
           </button>
         </div>
       ) : null}
-      {art ? <Sunset className="editor-art" /> : null}
+      {art && !start ? <Sunset className="editor-art" /> : null}
+      {start ? <StartScreen /> : null}
       <div ref={host} className="editor-host" onContextMenu={(event) => openContextMenu(event, editorMenu)} />
     </main>
   );
@@ -71,6 +77,8 @@ function EditorPane() {
 export function App() {
   const theme = useStore((s) => s.settings.theme);
   const fontSize = useStore((s) => s.settings.fontSize);
+  const glow = useStore((s) => s.settings.glow);
+  const toolbar = useStore((s) => s.settings.toolbar);
   const zen = useStore((s) => s.zen);
   const bottom = useStore((s) => s.bottom);
   const title = useStore((s) => {
@@ -80,9 +88,10 @@ export function App() {
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
+    document.documentElement.dataset.glow = glow;
     document.documentElement.style.setProperty("--ed-size", `${fontSize}px`);
     remeasure();
-  }, [theme, fontSize]);
+  }, [theme, fontSize, glow]);
 
   useEffect(() => {
     // The code font arrives after the first paint and has different metrics from the fallback.
@@ -96,8 +105,10 @@ export function App() {
   }, [title]);
 
   useEffect(() => {
-    hooks.onEdit = files.scheduleSessionSave;
-    const stop = onChange(files.scheduleSessionSave);
+    // The demo shows sample tabs in a browser and must not overwrite a real session.
+    const keepSession = demo ? () => undefined : files.scheduleSessionSave;
+    hooks.onEdit = keepSession;
+    const stop = onChange(keepSession);
 
     const onKey = (event: KeyboardEvent) => {
       if (handleKey(event)) {
@@ -106,7 +117,9 @@ export function App() {
       }
     };
     const onFocus = () => void files.checkDisk();
-    const onLeave = () => void files.saveSession();
+    const onLeave = () => {
+      if (!demo) void files.saveSession();
+    };
     const onWheel = (event: WheelEvent) => {
       if (!event.ctrlKey) return;
       event.preventDefault();
@@ -118,11 +131,20 @@ export function App() {
     };
     window.addEventListener("contextmenu", onContext);
     window.addEventListener("keydown", onKey, true);
+    const onBlur = () => {
+      if (get().settings.saveOnBlur) void files.saveNamed();
+    };
+    window.addEventListener("blur", onBlur);
     window.addEventListener("focus", onFocus);
     window.addEventListener("beforeunload", onLeave);
     window.addEventListener("wheel", onWheel, { passive: false });
 
-    void files.loadSession().then(() => applySettings());
+    void (demo ? seedDemo() : files.loadSession()).then(() => {
+      applySettings();
+      const splash = document.getElementById("splash");
+      splash?.classList.add("is-done");
+      setTimeout(() => splash?.remove(), 300);
+    });
     void platform.onFilesOpened((paths) => void files.openPaths(paths));
     void platform.onCloseRequested(() => {
       void files.saveSession().finally(() => void platform.closeWindow());
@@ -132,11 +154,25 @@ export function App() {
       stop();
       window.removeEventListener("contextmenu", onContext);
       window.removeEventListener("keydown", onKey, true);
+      window.removeEventListener("blur", onBlur);
       window.removeEventListener("focus", onFocus);
       window.removeEventListener("beforeunload", onLeave);
       window.removeEventListener("wheel", onWheel);
     };
   }, []);
+
+  // Demo only: the picture used at the top of the README.
+  if (demoPanel === "banner") {
+    return (
+      <div className="banner-shot">
+        <Postcard className="banner-art" />
+        <div className="banner-copy">
+          <h1 className="wordmark">Anonymous Notepad</h1>
+          <p>A text and code editor with a neon sunset look</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`app${zen ? " is-zen" : ""}`}>
@@ -149,6 +185,7 @@ export function App() {
           <span className="wordmark">Anonymous Notepad</span>
         </div>
         <MenuBar />
+        {toolbar ? <Toolbar /> : null}
       </header>
       <TabBar />
       <div className="workspace" id="editor">

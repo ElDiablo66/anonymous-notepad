@@ -7,7 +7,7 @@ import * as files from "../files";
 import { outline, supportsOutline } from "../funclist";
 import * as platform from "../platform";
 import { set, type SidePanel as Panel, useStore } from "../store";
-import { Sunset } from "./Art";
+import { Postcard } from "./Art";
 
 const titles: Record<Exclude<Panel, "none">, string> = {
   folder: "Folder workspace",
@@ -81,7 +81,7 @@ function FolderTree() {
   if (!workspace) {
     return (
       <div className="side-empty">
-        <Sunset className="side-art" />
+        <Postcard className="side-art" />
         <h3>No folder open</h3>
         <p>Open a folder to browse its files here and search across them.</p>
         <button type="button" className="btn btn-go" onClick={() => void command("file.openFolder")?.run()}>

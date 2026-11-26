@@ -47,7 +47,7 @@ fn hash_files(algorithm: String, paths: Vec<String>) -> Vec<FileHash> {
 }
 
 fn store_path(app: &AppHandle, name: &str) -> Result<PathBuf, String> {
-    if !matches!(name, "session" | "settings") {
+    if !matches!(name, "session" | "settings" | "session-backup") {
         return Err(format!("Unknown store: {name}"));
     }
     let dir = app.path().app_config_dir().map_err(|e| e.to_string())?;
@@ -67,10 +67,27 @@ fn store_load(app: AppHandle, name: String) -> Result<Option<String>, String> {
 
 #[tauri::command]
 fn store_save(app: AppHandle, name: String, json: String) -> Result<(), String> {
+    if name == "session-backup" {
+        return Err("The backup is written by the app itself".into());
+    }
     let path = store_path(&app, &name)?;
+    write_keeping_backup(&path, &json, name == "session")
+}
+
+/// Writes through a temporary file so a crash cannot leave half a file. With
+/// `backup`, the last readable version is first kept beside it as `<name>-backup.json`.
+fn write_keeping_backup(path: &Path, json: &str, backup: bool) -> Result<(), String> {
+    if backup {
+        if let Ok(previous) = fs::read_to_string(path) {
+            if serde_json::from_str::<serde_json::Value>(&previous).is_ok() {
+                let stem = path.file_stem().unwrap_or_default().to_string_lossy();
+                let _ = fs::write(path.with_file_name(format!("{stem}-backup.json")), previous);
+            }
+        }
+    }
     let draft = path.with_extension("json.tmp");
     fs::write(&draft, json).map_err(|e| e.to_string())?;
-    fs::rename(&draft, &path).map_err(|e| e.to_string())
+    fs::rename(&draft, path).map_err(|e| e.to_string())
 }
 
 /// Picks the file paths out of a command line, resolving them against `cwd`.
@@ -157,6 +174,27 @@ mod tests {
         );
         assert!(digest("sha512", b"abc").unwrap().starts_with("ddaf35a193617aba"));
         assert!(digest("crc", b"abc").is_err());
+    }
+
+    #[test]
+    fn session_backup_keeps_the_last_good_copy() {
+        let dir = std::env::temp_dir().join("anonymous-notepad-backup-test");
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("session.json");
+        let backup = dir.join("session-backup.json");
+
+        write_keeping_backup(&path, r#"{"docs":[1]}"#, true).unwrap();
+        assert!(!backup.exists());
+        write_keeping_backup(&path, r#"{"docs":[2]}"#, true).unwrap();
+        assert_eq!(fs::read_to_string(&backup).unwrap(), r#"{"docs":[1]}"#);
+
+        // A damaged main file must not replace a good backup.
+        fs::write(&path, "{broken").unwrap();
+        write_keeping_backup(&path, r#"{"docs":[3]}"#, true).unwrap();
+        assert_eq!(fs::read_to_string(&backup).unwrap(), r#"{"docs":[1]}"#);
+        assert_eq!(fs::read_to_string(&path).unwrap(), r#"{"docs":[3]}"#);
+        fs::remove_dir_all(&dir).unwrap();
     }
 
     #[test]

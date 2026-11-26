@@ -1,13 +1,17 @@
 {
   "name": "anonymous-notepad",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
+  "description": "Text and code editor for Windows with a neon sunset look",
+  "license": "MIT",
+  "author": "El Diablo 59",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run",
+    "notices": "node scripts/third-party-notices.mjs",
     "tauri": "tauri"
   },
   "dependencies": {
@@ -35,6 +39,7 @@
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.12.6",
+    "@types/node": "^26.6.11",
     "@types/react": "^19.3.3",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.3.0",

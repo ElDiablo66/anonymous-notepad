@@ -1,6 +1,10 @@
 # Third-party packages
 
-Anonymous Notepad is built on the packages below. Each licence is the one the package declares in its own manifest. Their transitive dependencies are recorded in `package-lock.json` and `src-tauri/Cargo.lock`.
+Anonymous Notepad's own code is under the [MIT licence](LICENSE). It is built on the packages below, which keep their own licences. Each licence listed is the one the package declares in its manifest.
+
+This page lists the packages the project depends on directly. `npm run notices` walks the whole dependency tree (333 packages at version 0.2.0) and writes every licence text into `third-party notices.txt`, which ships in the installer next to the program.
+
+None of them is under the GPL or another strong copyleft licence. Five Rust crates that come in through Tauri (`cssparser`, `cssparser-macros`, `selectors`, `dtoa-short`, `option-ext`) use the MPL-2.0, which asks that changes to those crates' own files stay open; this project uses them unchanged. Seven packages ship no licence file of their own, so the notices file records the licence they declare.
 
 ## Interface (npm)
 

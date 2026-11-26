@@ -1,6 +1,7 @@
 import type { MenuItem } from "../commands";
 import { command, encodingLabel, pickLanguage } from "../commands";
 import { set, useStore } from "../store";
+import { StationDial } from "./Chrome";
 import { openContextMenu } from "./Menus";
 
 const eolNames = { CRLF: "Windows (CR LF)", LF: "Unix (LF)", CR: "Mac (CR)" } as const;
@@ -34,6 +35,7 @@ export function StatusBar() {
       <button type="button" className="status-main" title="Choose language (Ctrl+Shift+G)" onClick={pickLanguage}>
         {doc.lang}
       </button>
+      <StationDial />
       <span className="status-fill" />
       <span title="Characters and lines in this file">
         {cursor.length.toLocaleString()} chars · {cursor.lines.toLocaleString()} lines

@@ -24,6 +24,7 @@ import * as ops from "./editops";
 import * as files from "./files";
 import * as platform from "./platform";
 import { clearStyle, findNext, lastFind, styleSelection } from "./search";
+import { neighbour, stations } from "./themes";
 import {
   activeDoc,
   ask,
@@ -40,11 +41,15 @@ import {
   toast,
 } from "./store";
 import {
+  base64Decode,
+  base64Encode,
   caseOps,
   dateTimeIso,
   dateTimeLong,
   dateTimeShort,
+  formatJson,
   lineOps,
+  minifyJson,
   spacesToTabs,
   splitLines,
   tabsToSpaces,
@@ -606,6 +611,36 @@ add({ id: "language.plain", title: "Plain text", checked: () => activeDoc()?.lan
 
 // Tools and settings
 
+function jsonIndent(): string | number {
+  const { insertSpaces, tabSize } = get().settings;
+  return insertSpaces ? tabSize : "\t";
+}
+
+add({ id: "tools.jsonFormat", title: "Format JSON", keys: "Ctrl+Alt+J", run: () => ops.transformText((text) => formatJson(text, jsonIndent()), "Not valid JSON") });
+add({ id: "tools.jsonMinify", title: "Minify JSON", run: () => ops.transformText(minifyJson, "Not valid JSON") });
+add({ id: "tools.base64Encode", title: "Base64 encode", run: () => ops.transformText(base64Encode, "Cannot encode") });
+add({ id: "tools.base64Decode", title: "Base64 decode", run: () => ops.transformText(base64Decode, "Not Base64 text") });
+add({ id: "tools.urlEncode", title: "URL encode", run: () => ops.transformText(encodeURIComponent, "Cannot encode") });
+add({ id: "tools.urlDecode", title: "URL decode", run: () => ops.transformText(decodeURIComponent, "Not URL-encoded text") });
+
+function tuneTo(step: 1 | -1): void {
+  const station = neighbour(get().settings.theme, step);
+  setSetting("theme", station.id);
+  toast(`${station.frequency.toFixed(1)} · ${station.name}`);
+}
+
+add({ id: "theme.next", title: "Next theme station", keys: "Ctrl+Alt+T", run: () => tuneTo(1) });
+add({ id: "theme.previous", title: "Previous theme station", keys: "Ctrl+Alt+Shift+T", run: () => tuneTo(-1) });
+for (const station of stations) {
+  add({
+    id: `theme.${station.id}`,
+    title: `Theme: ${station.name}`,
+    checked: () => get().settings.theme === station.id,
+    run: () => setSetting("theme", station.id),
+  });
+}
+add({ id: "view.toolbar", title: "Show toolbar", checked: () => get().settings.toolbar, run: () => toggleSetting("toolbar") });
+
 add({ id: "tools.hash", title: "Hashes: MD5, SHA-1, SHA-256, SHA-512…", run: () => openSheet("hash") });
 add({ id: "settings.preferences", title: "Preferences…", keys: "Ctrl+,", run: () => openSheet("preferences") });
 add({ id: "settings.shortcuts", title: "Keyboard shortcuts…", run: () => openSheet("shortcuts") });
@@ -772,6 +807,8 @@ export const menus: Menu[] = [
       "view.whitespace",
       "view.guides",
       "view.lineNumbers",
+      "view.toolbar",
+      { label: "Theme", items: [...stations.map((station) => `theme.${station.id}`), "-", "theme.next", "theme.previous"] },
       { label: "Zoom", items: ["view.zoomIn", "view.zoomOut", "view.zoomReset"] },
       { label: "Fold", items: ["view.foldAll", "view.unfoldAll", "view.fold", "view.unfold"] },
       "-",
@@ -810,7 +847,22 @@ export const menus: Menu[] = [
   },
   {
     label: "Tools",
-    items: ["tools.hash", "-", "settings.preferences", "settings.shortcuts", "-", "help.about"],
+    items: [
+      "tools.jsonFormat",
+      "tools.jsonMinify",
+      "-",
+      "tools.base64Encode",
+      "tools.base64Decode",
+      "tools.urlEncode",
+      "tools.urlDecode",
+      "-",
+      "tools.hash",
+      "-",
+      "settings.preferences",
+      "settings.shortcuts",
+      "-",
+      "help.about",
+    ],
   },
 ];
 

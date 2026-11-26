@@ -53,6 +53,18 @@ export function newDoc(text = ""): Doc {
   return doc;
 }
 
+/** Adds a tab with the given text, as if it had just been read from disk. Used by the demo. */
+export async function addDoc(name: string, text: string, lang: string): Promise<string> {
+  const doc = blankDoc({ name, lang });
+  createDoc({ id: doc.id, text });
+  const docs = get().docs;
+  const placeholder = docs.length === 1 && isPlaceholder(docs[0]) ? docs[0] : null;
+  set({ docs: placeholder ? [doc] : [...docs, doc], activeId: doc.id });
+  if (placeholder) removeDoc(placeholder.id);
+  await setLanguage(doc.id, lang);
+  return doc.id;
+}
+
 /** True for the single empty "new 1" tab the app starts with, which opening a file replaces. */
 function isPlaceholder(doc: Doc): boolean {
   return !doc.path && !doc.dirty && snapshot(doc.id)?.text === "";
@@ -167,6 +179,13 @@ export async function saveCopy(id: string): Promise<void> {
 export async function saveAll(): Promise<void> {
   for (const doc of get().docs) {
     if (doc.dirty) await save(doc.id);
+  }
+}
+
+/** Saves every changed file that already has a path. Untitled tabs are left to the session. */
+export async function saveNamed(): Promise<void> {
+  for (const doc of get().docs) {
+    if (doc.dirty && doc.path && !doc.changedOnDisk) await save(doc.id);
   }
 }
 
@@ -404,11 +423,14 @@ export async function loadSession(): Promise<void> {
   }
 
   let session: SavedSession | null = null;
-  try {
-    const json = await platform.storeLoad("session");
-    if (json) session = JSON.parse(json) as SavedSession;
-  } catch {
-    session = null;
+  for (const name of ["session", "session-backup"] as const) {
+    try {
+      const json = await platform.storeLoad(name);
+      if (json) session = JSON.parse(json) as SavedSession;
+    } catch {
+      session = null;
+    }
+    if (session) break;
   }
 
   if (session) {

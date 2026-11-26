@@ -202,3 +202,26 @@ export function hasBookmarks(): boolean {
   const view = getView();
   return view ? bookmarkPositions(view.state).length > 0 : false;
 }
+
+/** Runs a converter over each selection, or over the whole text when nothing is selected. */
+export function transformText(convert: (text: string) => string, failure: string): void {
+  const view = getView();
+  if (!view) return;
+  const state = view.state;
+  try {
+    if (state.selection.ranges.every((range) => range.empty)) {
+      const insert = convert(state.doc.toString());
+      view.dispatch({ changes: { from: 0, to: state.doc.length, insert }, userEvent: "input.convert" });
+    } else {
+      view.dispatch(
+        state.changeByRange((range) => {
+          const insert = convert(state.sliceDoc(range.from, range.to));
+          return { changes: { from: range.from, to: range.to, insert }, range: EditorSelection.range(range.from, range.from + insert.length) };
+        }),
+      );
+    }
+    view.focus();
+  } catch (error) {
+    toast(`${failure}: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}

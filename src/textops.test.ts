@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  base64Decode,
+  base64Encode,
   caseOps,
+  formatJson,
   lineOps,
+  minifyJson,
   numberColumn,
   spacesToTabs,
   splitLines,
@@ -98,5 +102,20 @@ describe("summary and escapes", () => {
   it("expands extended escapes", () => {
     expect(unescapeExtended("a\\tb\\n\\x41\\u00e9\\\\")).toBe("a\tb\nAé\\");
     expect(unescapeExtended("\\q")).toBe("\\q");
+  });
+});
+
+describe("converters", () => {
+  it("formats and minifies JSON", () => {
+    expect(formatJson('{"a":[1,2],"b":null}', 2)).toBe('{\n  "a": [\n    1,\n    2\n  ],\n  "b": null\n}');
+    expect(minifyJson('{ "a" : [ 1, 2 ] }')).toBe('{"a":[1,2]}');
+    expect(() => formatJson("{oops}", 2)).toThrow();
+  });
+
+  it("round-trips Base64 with text outside ASCII", () => {
+    expect(base64Encode("neon")).toBe("bmVvbg==");
+    expect(base64Decode(base64Encode("café 日本 😀"))).toBe("café 日本 😀");
+    expect(base64Decode("bmVv\nbg==")).toBe("neon");
+    expect(() => base64Decode("not base64!")).toThrow();
   });
 });

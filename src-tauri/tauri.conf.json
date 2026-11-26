@@ -1,13 +1,13 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Anonymous Notepad",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "identifier": "app.anonymousnotepad.desktop",
   "build": {
     "devUrl": "http://localhost:5184",
     "frontendDist": "../dist",
-    "beforeDevCommand": "npm run dev",
-    "beforeBuildCommand": "npm run build"
+    "beforeDevCommand": "npm run notices && npm run dev",
+    "beforeBuildCommand": "npm run notices && npm run build"
   },
   "app": {
     "windows": [
@@ -29,10 +29,12 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis"],
+    "targets": [
+      "nsis"
+    ],
     "publisher": "El Diablo 59",
     "shortDescription": "Text and code editor with a neon sunset look",
-    "longDescription": "Anonymous Notepad is a text and code editor with tabs, session restore, search across files, line tools and syntax colours for more than a hundred languages.",
+    "longDescription": "Anonymous Notepad is a text and code editor with tabs that survive a restart, search across files, line tools, six neon sunset themes and syntax colours for more than a hundred languages. No account, no cloud, no assistant.",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -41,8 +43,15 @@
       "icons/icon.ico"
     ],
     "windows": {
-      "nsis": { "installMode": "currentUser" }
+      "nsis": {
+        "installMode": "currentUser"
+      }
     },
-    "copyright": "Copyright 2026 El Diablo 59"
+    "copyright": "Copyright 2026 El Diablo 59",
+    "resources": {
+      "resources/third-party notices.txt": "third-party notices.txt",
+      "../LICENSE": "LICENSE.txt"
+    },
+    "licenseFile": "../LICENSE"
   }
 }
