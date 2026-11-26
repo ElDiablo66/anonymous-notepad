@@ -68,6 +68,8 @@ export interface BigHit {
   len: number;
 }
 
+declare const __APP_VERSION__: string;
+
 export const desktop = "__TAURI_INTERNALS__" in window;
 
 async function call<T>(command: string, args?: Record<string, unknown>): Promise<T> {
@@ -296,4 +298,31 @@ export async function bigFind(id: number, what: string, matchCase: boolean, line
 
 export async function bigClose(id: number): Promise<void> {
   if (desktop) await call("big_close", { id });
+}
+
+// Updates. Outside the desktop app there is nothing to update.
+
+export interface FoundUpdate {
+  version: string;
+  notes: string;
+}
+
+export async function appVersion(): Promise<string> {
+  if (desktop) return call<string>("update_version");
+  return __APP_VERSION__;
+}
+
+export async function updateCheck(): Promise<FoundUpdate | null> {
+  if (!desktop) return null;
+  return call<FoundUpdate | null>("update_check");
+}
+
+export async function updateInstall(): Promise<void> {
+  if (desktop) await call("update_install");
+}
+
+export async function onUpdateProgress(handler: (done: number, total: number) => void): Promise<() => void> {
+  if (!desktop) return () => undefined;
+  const { listen } = await import("@tauri-apps/api/event");
+  return listen<[number, number]>("update-progress", (event) => handler(event.payload[0], event.payload[1]));
 }

@@ -2,7 +2,7 @@
 
 Anonymous Notepad's own code is under the [MIT licence](LICENSE). It is built on the packages below, which keep their own licences. Each licence listed is the one the package declares in its manifest.
 
-This page lists the packages the project depends on directly. `npm run notices` walks the whole dependency tree (339 packages at version 0.3.0) and writes every licence text into `third-party notices.txt`, which ships in the installer next to the program.
+This page lists the packages the project depends on directly. `npm run notices` walks the whole dependency tree (382 packages at version 0.4.0) and writes every licence text into `third-party notices.txt`, which ships in the installer next to the program.
 
 None of them is under the GPL or another strong copyleft licence. Five Rust crates that come in through Tauri (`cssparser`, `cssparser-macros`, `selectors`, `dtoa-short`, `option-ext`) use the MPL-2.0, which asks that changes to those crates' own files stay open; this project uses them unchanged. Seven packages ship no licence file of their own, so the notices file records the licence they declare.
 
@@ -31,7 +31,7 @@ None of them is under the GPL or another strong copyleft licence. Five Rust crat
 
 | Crate | Licence |
 | --- | --- |
-| tauri, tauri-plugin-dialog, tauri-plugin-opener, tauri-plugin-single-instance | MIT or Apache-2.0 |
+| tauri, tauri-plugin-dialog, tauri-plugin-opener, tauri-plugin-single-instance, tauri-plugin-updater | MIT or Apache-2.0 |
 | serde, serde_json | MIT or Apache-2.0 |
 | encoding_rs | (Apache-2.0 or MIT) and BSD-3-Clause |
 | chardetng | MIT or Apache-2.0 |

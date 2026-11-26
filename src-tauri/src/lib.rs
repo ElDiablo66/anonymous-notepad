@@ -1,6 +1,7 @@
 pub mod bigfile;
 pub mod files;
 pub mod search;
+mod update;
 
 use md5::Md5;
 use sha1::Sha1;
@@ -142,6 +143,7 @@ pub fn run() {
         }))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
             files::read_file,
             files::write_file,
@@ -154,6 +156,9 @@ pub fn run() {
             bigfile::big_read,
             bigfile::big_find,
             bigfile::big_close,
+            update::update_version,
+            update::update_check,
+            update::update_install,
             hash_text,
             hash_files,
             store_load,

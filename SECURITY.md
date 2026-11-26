@@ -2,7 +2,7 @@
 
 If you find a security problem, please don't open a public issue. Use "Report a vulnerability" under the Security tab of this repository, which reaches me privately.
 
-The app makes no network requests and has no updater, so the cases that matter most are a crafted file or folder name that makes the app read or write outside what you asked for, or content that runs as code inside the window.
+The app's only network use is the update check against this repository's releases, and it installs an update only when the installer's signature matches the public key built into the app. Beyond that, the cases that matter most are a crafted file or folder name that makes the app read or write outside what you asked for, or content that runs as code inside the window.
 
 ## Supported versions
 

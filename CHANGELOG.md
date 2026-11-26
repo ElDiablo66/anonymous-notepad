@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.0, 26 November 2026
+
+Added
+
+- The app updates itself from its GitHub releases. It looks at start-up and every six hours. Preferences, Updates, chooses between installing at start-up (the default), being told with a bar above the text, and not looking at all. Each update must carry a signature that matches the key built into the app, or it is refused.
+- Tabs and unsaved text are saved before an update installs, so they come back after the restart.
+
+Changed
+
+- The app now makes one kind of network request: the update check. Turn it off with "Don't look".
+
 ## 0.3.2, 26 November 2026
 
 Fixed

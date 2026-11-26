@@ -708,6 +708,26 @@ kbd {
 .banner p {
   flex: 1;
 }
+.banner-update {
+  background: color-mix(in srgb, var(--accent) 14%, var(--panel));
+}
+.update-notes {
+  white-space: pre-wrap;
+  color: var(--text-soft);
+  font-size: 12px;
+  max-height: 160px;
+  overflow: auto;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--dusk-deep);
+}
+.pref-note {
+  color: var(--teal);
+  font-size: 12px;
+}
+.sheet-body .btn-row > .btn:first-child {
+  flex: none;
+}
 
 /* Buttons and fields */
 

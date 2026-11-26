@@ -21,7 +21,13 @@ These were picked first because each is visible on the first launch or fixes a t
 | A backup copy of the session file | People have lost months of unsaved tabs | Low | Function |
 | Format and minify JSON, Base64 and URL encode and decode | These are among the most installed Notepad++ plugins | Low | Function |
 
-True since 0.1.0 and worth saying: the installer needs no administrator rights, there is no updater that phones home, the app makes no network requests, and there is no account or assistant.
+True since 0.1.0 and worth saying: the installer needs no administrator rights, and there is no account or assistant. Since 0.4.0 the only network request is the signed update check, which can be turned off.
+
+## Shipped in 0.4.0
+
+| Idea | The need it answers | Effort | Kind |
+| --- | --- | --- | --- |
+| Signed self-updater from the GitHub releases, with install at start-up, tell me, or off | Notepad++'s update channel was hijacked in 2025; here every update must match the app's own key | Medium | Function |
 
 ## Shipped in 0.3.0
 
@@ -78,4 +84,4 @@ Nobody asked for these. They are here because they make the app feel like itself
 
 - Nothing decorative runs while you type. Glow is a static shadow; there are no per-keystroke animations.
 - Every effect has an off switch in Preferences.
-- A new feature that needs the network is not built.
+- No network use beyond the update check.

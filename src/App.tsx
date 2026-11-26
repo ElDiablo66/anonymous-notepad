@@ -13,6 +13,7 @@ import { applySettings, hooks, mount, remeasure, show, unmount } from "./editor/
 import { demo, demoPanel, seedDemo } from "./demo";
 import * as files from "./files";
 import * as platform from "./platform";
+import { installUpdate, watchForUpdates } from "./updates";
 import { setUiScale, sizeForWindow } from "./scale";
 import { get, onChange, patchDoc, set, useStore } from "./store";
 
@@ -40,6 +41,8 @@ function EditorPane() {
   const activeId = useStore((s) => s.activeId);
   const doc = useStore((s) => s.docs.find((d) => d.id === s.activeId));
   const art = useStore((s) => s.settings.backgroundArt);
+  const update = useStore((s) => s.update);
+  const [updateLater, setUpdateLater] = useState("");
   const start = useStore(
     (s) => s.settings.startScreen && s.docs.length === 1 && !s.docs[0].path && !s.docs[0].dirty && s.cursor.length === 0 && s.sheet === null,
   );
@@ -71,6 +74,19 @@ function EditorPane() {
           </button>
           <button type="button" className="btn" onClick={() => patchDoc(doc.id, { changedOnDisk: false })}>
             Keep my version
+          </button>
+        </div>
+      ) : null}
+      {update && updateLater !== update.version ? (
+        <div className="banner banner-update" role="status">
+          <p>
+            Version <strong>{update.version}</strong> is out. Your tabs, unsaved text included, come back after the restart.
+          </p>
+          <button type="button" className="btn btn-go" disabled={update.busy} onClick={() => void installUpdate()}>
+            {update.busy ? "Updating…" : "Update and restart"}
+          </button>
+          <button type="button" className="btn" disabled={update.busy} onClick={() => setUpdateLater(update.version)}>
+            Later
           </button>
         </div>
       ) : null}
@@ -167,6 +183,7 @@ export function App() {
     window.addEventListener("beforeunload", onLeave);
     window.addEventListener("wheel", onWheel, { passive: false });
 
+    const stopUpdates = demo ? () => undefined : watchForUpdates();
     void (demo ? seedDemo() : files.loadSession()).then(() => {
       applySettings();
       const splash = document.getElementById("splash");
@@ -179,6 +196,7 @@ export function App() {
     });
 
     return () => {
+      stopUpdates();
       stop();
       window.removeEventListener("contextmenu", onContext);
       window.removeEventListener("keydown", onKey, true);

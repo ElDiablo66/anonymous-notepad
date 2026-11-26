@@ -8,6 +8,7 @@ import { sizeForWindow, sizes } from "../scale";
 import { activeDoc, defaultSettings, set, setSetting, type Settings, type SheetName, toast, useStore } from "../store";
 import { numberColumn, summarize } from "../textops";
 import { stations } from "../themes";
+import { installUpdate, lookForUpdate } from "../updates";
 import { Logo, Postcard } from "./Art";
 
 declare const __APP_VERSION__: string;
@@ -256,6 +257,8 @@ function Preferences() {
       <h3>Saving</h3>
       <Toggle name="saveOnBlur" label="Save when the window loses focus" hint="Only files that already have a place on disk" />
 
+      <Updates />
+
       <h3>Start-up</h3>
       <Toggle name="restoreSession" label="Reopen tabs from last time" hint="Unsaved text is kept too, so closing the app never asks" />
       <label className="pref-stack">
@@ -275,6 +278,81 @@ function Preferences() {
       >
         Reset every preference
       </button>
+    </>
+  );
+}
+
+function Updates() {
+  const choice = useStore((s) => s.settings.updates);
+  const update = useStore((s) => s.update);
+  const [version, setVersion] = useState("");
+  const [note, setNote] = useState("");
+  const [asking, setAsking] = useState(false);
+
+  useEffect(() => {
+    void platform.appVersion().then(setVersion);
+  }, []);
+
+  const look = async () => {
+    setAsking(true);
+    setNote("");
+    try {
+      const found = await lookForUpdate();
+      setNote(found ? "" : "This is the newest version.");
+    } catch (error) {
+      setNote(`Could not ask GitHub: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setAsking(false);
+    }
+  };
+
+  return (
+    <>
+      <h3>Updates</h3>
+      <div className="pref-stack">
+        <span>
+          <strong>When a newer version is out</strong>
+          <small>
+            The app asks its GitHub releases page at start-up and every six hours, and sends nothing else. An update is only installed when its
+            signature matches this app's key.
+          </small>
+        </span>
+        <div className="seg seg-fill" role="radiogroup" aria-label="Updates">
+          {(
+            [
+              ["auto", "Install at start-up"],
+              ["tell", "Tell me"],
+              ["off", "Don't look"],
+            ] as const
+          ).map(([value, label]) => (
+            <button key={value} type="button" role="radio" aria-checked={choice === value} className={choice === value ? "is-on" : ""} onClick={() => setSetting("updates", value)}>
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="pref-stack">
+        <span>
+          <strong>Version {version || "…"}</strong>
+          {!platform.desktop ? <small>Updates work in the desktop app only.</small> : null}
+        </span>
+        <div className="btn-row">
+          <button type="button" className="btn" disabled={asking || !platform.desktop || update?.busy} onClick={() => void look()}>
+            {asking ? "Asking…" : "Look for an update now"}
+          </button>
+          {update ? (
+            <button type="button" className="btn btn-go" disabled={update.busy} onClick={() => void installUpdate()}>
+              {update.busy ? "Updating…" : `Update to ${update.version}`}
+            </button>
+          ) : null}
+        </div>
+        {update?.notes && !update.busy ? <p className="update-notes">{update.notes}</p> : null}
+        {note ? (
+          <p className="pref-note" role="status">
+            {note}
+          </p>
+        ) : null}
+      </div>
     </>
   );
 }

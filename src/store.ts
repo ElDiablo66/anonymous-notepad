@@ -46,6 +46,8 @@ export interface Settings {
   autoClose: boolean;
   backgroundArt: boolean;
   restoreSession: boolean;
+  /** What to do when a newer version is on GitHub. */
+  updates: "auto" | "tell" | "off";
   /** Writes changed files that already have a place on disk when the window loses focus. */
   saveOnBlur: boolean;
   searchEngine: string;
@@ -71,6 +73,7 @@ export const defaultSettings: Settings = {
   backgroundArt: true,
   restoreSession: true,
   saveOnBlur: false,
+  updates: "auto",
   searchEngine: "https://duckduckgo.com/?q=",
 };
 
@@ -148,6 +151,8 @@ export interface AppState {
   textVersion: number;
   /** Bumps when the find panel should take the selection and focus its box. */
   findNonce: number;
+  /** A newer version found on GitHub and not installed yet. */
+  update: { version: string; notes: string; busy: boolean } | null;
 }
 
 let state: AppState = {
@@ -171,6 +176,7 @@ let state: AppState = {
   toast: null,
   textVersion: 0,
   findNonce: 0,
+  update: null,
 };
 
 const listeners = new Set<() => void>();

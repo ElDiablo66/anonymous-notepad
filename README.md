@@ -9,7 +9,7 @@
   <img src="https://shieldcn.dev/badge/Windows-11-ffc46b.svg?split=true&font=geist&labelTextColor=0b0418&valueColor=0b0418" alt="Windows 11" />
   <img src="https://shieldcn.dev/badge/built%20with-Rust%20%2B%20Tauri%202-b56dff.svg?split=true&font=geist" alt="Built with Rust and Tauri 2" />
   <a href="LICENSE"><img src="https://shieldcn.dev/badge/licence-MIT-4fd8e0.svg?split=true&font=geist&labelTextColor=0b0418&valueColor=0b0418" alt="MIT licence" /></a>
-  <img src="https://shieldcn.dev/badge/network-none-6fe0a8.svg?split=true&font=geist&labelTextColor=0b0418&valueColor=0b0418" alt="Makes no network requests" />
+  <img src="https://shieldcn.dev/badge/network-updates only-6fe0a8.svg?split=true&font=geist&labelTextColor=0b0418&valueColor=0b0418" alt="Network use: update checks only" />
 </p>
 
 # Anonymous Notepad
@@ -112,7 +112,7 @@ cargo run --release --manifest-path src-tauri/Cargo.toml --example bench -- big 
 2. Run it. It installs for your user only and needs no administrator rights.
 3. The installer isn't code signed, so Windows SmartScreen warns the first time. Choose "More info", then "Run anyway". Each release lists the file's SHA-256 if you want to check your download.
 
-To update, run the newer installer over the old one. Your tabs and preferences are kept. Windows 11 is the only system it has been built and tried on.
+From 0.4.0 on the app updates itself from this repository's releases; Preferences, Updates, has the choice of installing at start-up, being told, or not looking. To move up from 0.3.x, run the newer installer over the old one once. Your tabs and preferences are kept. Windows 11 is the only system it has been built and tried on.
 
 ## Keys worth knowing
 
@@ -138,7 +138,7 @@ The full list is under Tools, Keyboard shortcuts.
 
 Open tabs, unsaved text and preferences are kept in `%APPDATA%\app.anonymousnotepad.desktop\` as `session.json`, `session-backup.json` and `settings.json`. Delete them to start clean.
 
-The app makes no network requests and has no updater. The "Search the web for the selection" command opens your own browser at the address set in Preferences.
+The only network request the app makes is the update check: it fetches `latest.json` from this repository's newest release at start-up and every six hours, and downloads the installer named there when you update. Nothing about you or your files is sent. An update is installed only when its signature matches the key built into the app. "Don't look" in Preferences, Updates, turns the check off. The "Search the web for the selection" command opens your own browser at the address set in Preferences.
 
 ## Known limits
 

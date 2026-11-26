@@ -65,7 +65,7 @@ All four run on every pull request. Run `npm run build` and `npm run notices` on
 ## Two rules
 
 1. Original work only. No artwork, fonts, logos, names or text from any game, film or other editor, and no code copied from projects whose licence does not allow it. If a picture is inspired by something, draw it yourself. Fonts and packages need a licence that allows redistribution, and a line in `THIRD-PARTY.md`.
-2. No network. The app makes no requests and has no updater or telemetry. Features that need the internet are out of scope.
+2. No network beyond updates. The only request the app makes is the signed update check against this repository's releases. No telemetry, accounts or online features.
 
 ## Style
 
