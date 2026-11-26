@@ -150,6 +150,25 @@ pub fn plan_file(pattern: &Regex, replacement: &Replacement, path: &Path) -> Opt
             lines.push(LineChange { line: index + 1, before: shorten(line), after: shorten(&after) });
         }
     }
+    // Matches that cross a line end do not show up line by line; show the joined lines instead.
+    for found in pattern.find_iter(&text) {
+        if lines.len() >= SHOWN_PER_FILE {
+            break;
+        }
+        if !found.as_str().contains('\n') {
+            continue;
+        }
+        let start = text[..found.start()].rfind('\n').map_or(0, |at| at + 1);
+        let end = text[found.end()..].find('\n').map_or(text.len(), |at| found.end() + at);
+        let span = text[start..end].strip_suffix('\r').unwrap_or(&text[start..end]);
+        let joined = |part: &str| part.replace("\r\n", " \u{23ce} ").replace('\n', " \u{23ce} ");
+        lines.push(LineChange {
+            line: text[..start].matches('\n').count() + 1,
+            before: shorten(&joined(span)),
+            after: shorten(&joined(&replacement.apply(pattern, span))),
+        });
+    }
+    lines.sort_by_key(|change| change.line);
     Some(FileChange {
         path: path.to_string_lossy().into_owned(),
         fingerprint: fingerprint(&bytes),
@@ -328,6 +347,20 @@ mod tests {
         assert_eq!(fs::read(dir.join("c.txt")).unwrap(), encode("néon? glow café", "windows-1252", false).unwrap());
         assert_eq!(fs::read_to_string(dir.join("d.txt")).unwrap(), "nothing here");
         assert!(!dir.join("a.txt.anonymous-notepad-tmp").exists());
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn matches_across_line_ends_are_shown() {
+        let dir = folder("across");
+        fs::write(dir.join("a.txt"), "one,\r\ntwo\r\n").unwrap();
+        let plan = preview(&options(&dir, r",\r\n", "extended"), ", ", 1).unwrap();
+        let file = &plan.files[0];
+        assert_eq!(file.count, 1);
+        assert_eq!(file.lines.len(), 1);
+        assert_eq!(file.lines[0].line, 1);
+        assert_eq!(file.lines[0].before, "one, \u{23ce} two");
+        assert_eq!(file.lines[0].after, "one, two");
         fs::remove_dir_all(&dir).unwrap();
     }
 
