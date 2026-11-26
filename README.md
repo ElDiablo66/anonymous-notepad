@@ -36,11 +36,12 @@ The feature choices come from reading what users of Notepad++ and Windows Notepa
 
 ### The editor
 
-- Tabs that come back after a restart, including text you never saved. Closing the app does not ask about unsaved tabs; closing a single tab does. The session file keeps a backup copy of itself.
+- Tabs that come back after a restart, including text you never saved. Each file is read the first time you look at its tab, so a session with hundreds of tabs still opens at once. Closing the app does not ask about unsaved tabs; closing a single tab does. The session file keeps a backup copy of itself.
 - Optional saving when the window loses focus.
 - Syntax colours for 143 languages, picked from the file name or by hand (`Ctrl+Shift+G`).
 - Find and replace in normal, extended (`\n`, `\t`, `\x41`) and regular expression mode, with count, find all in open files and a results list you can click through.
-- Find in files across a folder, with name filters such as `*.rs; *.toml; !*.lock`.
+- Find in files across a folder on every processor core, with name filters such as `*.rs; *.toml; !*.lock`.
+- A read-only viewer for files over 50 MB that reads only the lines on screen, with its own go-to-line and find.
 - Bookmarks in the margin and five highlight colours for marking every occurrence of a word.
 - Line tools: 14 sorts, remove duplicates, remove empty lines, reverse, shuffle, join, split, trim, tabs to spaces and back.
 - Case tools, a column editor for text or number series, multiple cursors (`Ctrl` and click) and column selection (`Alt` and drag).
@@ -67,9 +68,35 @@ As of November 2026, from the sources in [docs/research.md](docs/research.md).
 | JSON, Base64 and URL tools | Built in | Plugins | No |
 | Themes cover every panel | Yes | Not plugin dialogs | Light and dark only |
 | Plugins and macros | No | Yes | No |
-| Very large files | Refuses over 256 MB | Larger, with mixed reports | Opens up to about 1 GB |
+| Very large files | Read-only viewer, tested at 2 GB | Larger, with mixed reports | Opens up to about 1 GB |
 
-Notepad++ is a native program and stays lighter on memory and faster on big files. This editor draws its text in a web view.
+Notepad++ is a native program and stays lighter on memory and quicker to start. This editor draws its text in a web view; the heavy jobs (searching folders, reading huge files) run in Rust.
+
+## Speed
+
+Measured on a 16-core desktop PC with the benchmark in this repository. Your numbers will differ; the commands are below.
+
+| Job | Result |
+| --- | --- |
+| Find in files, 12,033 files, no matches | 77 ms on all cores, 775 ms on one |
+| Find in files, 12,033 files, 44,308 matches | 680 ms on all cores, 1,689 ms on one |
+| Open a 2 GB log (30.4 million lines) in the viewer | 0.9 s |
+| Read 120 lines from the middle and the end of that file | 15 microseconds |
+| Find text on the last line of that file | 0.12 s |
+
+```powershell
+cargo run --release --manifest-path src-tauri/Cargo.toml --example bench -- find C:\some\folder function
+```
+
+```powershell
+cargo run --release --manifest-path src-tauri/Cargo.toml --example bench -- make C:\temp\big.log 2048
+```
+
+```powershell
+cargo run --release --manifest-path src-tauri/Cargo.toml --example bench -- big C:\temp\big.log needle
+```
+
+![The large-file viewer showing a 2 GB log](Design/screens/large%20file%20viewer.png)
 
 ## Install
 
@@ -121,7 +148,7 @@ npm test
 cargo test --manifest-path src-tauri/Cargo.toml
 ```
 
-`npm test` covers the line, case, number and conversion tools and checks the contrast of every theme. `cargo test` covers encoding detection and round trips, line endings, find in files, file filters, the hashes and the session backup. Run `npm run build` and `npm run notices` once before `cargo test`, because the Rust build expects the web files and the notices file to exist.
+`npm test` covers the line, case, number and conversion tools and checks the contrast of every theme. `cargo test` covers encoding detection and round trips, line endings, find in files across a folder, file filters, the large-file viewer, the hashes and the session backup. Run `npm run build` and `npm run notices` once before `cargo test`, because the Rust build expects the web files and the notices file to exist.
 
 ## Keys worth knowing
 
@@ -153,7 +180,7 @@ The app makes no network requests and has no updater. The "Search the web for th
 ## Known limits
 
 - The installed app has had little real-world use so far. Expect rough edges and please [report them](https://github.com/ElDiablo66/anonymous-notepad/issues).
-- The editor keeps the whole file in memory. Files of a few megabytes are fine; files over 256 MB are refused.
+- The editor keeps the whole file in memory, so files over 50 MB open in the read-only viewer. The viewer reads UTF-8 and single-byte text; it refuses UTF-16. It shows the file as it was when opened and does not follow a file that is still growing.
 - Find in files uses Rust regular expressions; find in the editor uses JavaScript ones. Lookbehind and backreferences work in the editor only.
 - No printing, macro recording, split view, plugins or replace in files yet. See the [roadmap](docs/roadmap.md).
 - The outline is pattern based. It covers 30 languages and can miss unusual code layouts.
@@ -164,6 +191,8 @@ The app makes no network requests and has no updater. The "Search the web for th
 | --- | --- |
 | Reading, writing, encodings, folder listing | `src-tauri/src/files.rs` |
 | Find in files | `src-tauri/src/search.rs` |
+| Large-file viewer | `src-tauri/src/bigfile.rs`, `src/components/BigViewer.tsx` |
+| Benchmarks | `src-tauri/examples/bench.rs` |
 | Hashes, saved session, command line | `src-tauri/src/lib.rs` |
 | Editor set-up, bookmarks, marks | `src/editor/` |
 | Every command, the menus and the keys | `src/commands.ts` |

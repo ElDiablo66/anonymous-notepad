@@ -1,15 +1,18 @@
-//! Find in files: walks a folder and reports every matching line.
+//! Find in files: walks a folder on every processor core and reports each matching line.
 
 use crate::files::decode;
+use ignore::{WalkBuilder, WalkState};
 use regex::{Regex, RegexBuilder};
 use serde::{Deserialize, Serialize};
 use std::fs;
-use walkdir::{DirEntry, WalkDir};
+use std::path::Path;
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::sync::Mutex;
 
-const MAX_SEARCH_BYTES: u64 = 32 * 1024 * 1024;
+const MAX_SEARCH_BYTES: u64 = 64 * 1024 * 1024;
 const MAX_LINE_CHARS: usize = 400;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct FindOptions {
     pub dir: String,
@@ -25,7 +28,7 @@ pub struct FindOptions {
     pub max_hits: usize,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub struct Hit {
     pub path: String,
     pub line: usize,
@@ -161,26 +164,29 @@ impl Filters {
     }
 }
 
-fn is_hidden(entry: &DirEntry) -> bool {
-    if entry.depth() == 0 {
+fn is_hidden(path: &Path, depth: usize) -> bool {
+    if depth == 0 {
         return false;
     }
-    if entry.file_name().to_string_lossy().starts_with('.') {
+    if path.file_name().is_some_and(|name| name.to_string_lossy().starts_with('.')) {
         return true;
     }
     #[cfg(windows)]
     {
         use std::os::windows::fs::MetadataExt;
-        if let Ok(meta) = entry.metadata() {
+        if let Ok(meta) = fs::metadata(path) {
             return meta.file_attributes() & 0x2 != 0;
         }
     }
     false
 }
 
+fn has_utf16_mark(bytes: &[u8]) -> bool {
+    bytes.starts_with(&[0xFF, 0xFE]) || bytes.starts_with(&[0xFE, 0xFF])
+}
+
 fn looks_binary(bytes: &[u8]) -> bool {
-    let has_utf16_mark = bytes.starts_with(&[0xFF, 0xFE]) || bytes.starts_with(&[0xFE, 0xFF]);
-    !has_utf16_mark && bytes.iter().take(8192).any(|&b| b == 0)
+    !has_utf16_mark(bytes) && bytes.iter().take(8192).any(|&b| b == 0)
 }
 
 fn shorten(line: &str) -> String {
@@ -191,7 +197,12 @@ fn shorten(line: &str) -> String {
     }
 }
 
-pub fn search_text(pattern: &Regex, path: &str, text: &str, hits: &mut Vec<Hit>, max_hits: usize) -> bool {
+/// Adds every match in `text` to `hits`, up to `room` of them. Returns true when the text matched at all.
+pub fn search_text(pattern: &Regex, path: &str, text: &str, hits: &mut Vec<Hit>, room: usize) -> bool {
+    // One pass over the whole text first: most files do not match, and those never get split into lines.
+    if !pattern.is_match(text) {
+        return false;
+    }
     let mut found = false;
     for (index, raw) in text.split('\n').enumerate() {
         let line = raw.strip_suffix('\r').unwrap_or(raw);
@@ -200,7 +211,7 @@ pub fn search_text(pattern: &Regex, path: &str, text: &str, hits: &mut Vec<Hit>,
                 continue;
             }
             found = true;
-            if hits.len() >= max_hits {
+            if hits.len() >= room {
                 return found;
             }
             hits.push(Hit {
@@ -215,45 +226,101 @@ pub fn search_text(pattern: &Regex, path: &str, text: &str, hits: &mut Vec<Hit>,
     found
 }
 
-#[tauri::command(async)]
-pub fn find_in_files(options: FindOptions) -> Result<FindResult, String> {
+/// Searches one file. Plain UTF-8, the usual case, is searched in place without copying.
+fn search_file(pattern: &Regex, path: &Path, room: usize) -> Option<Vec<Hit>> {
+    let bytes = fs::read(path).ok()?;
+    if looks_binary(&bytes) {
+        return None;
+    }
+    let shown = path.to_string_lossy();
+    let mut hits = Vec::new();
+    let body = bytes.strip_prefix(&[0xEF, 0xBB, 0xBF]).unwrap_or(&bytes);
+    match std::str::from_utf8(body) {
+        Ok(text) if !has_utf16_mark(&bytes) => {
+            search_text(pattern, &shown, text, &mut hits, room);
+        }
+        _ => {
+            let decoded = decode(&bytes, None).ok()?;
+            search_text(pattern, &shown, &decoded.text, &mut hits, room);
+        }
+    }
+    Some(hits)
+}
+
+/// The search itself. `threads` of 0 lets the walker use every core.
+pub fn find(options: &FindOptions, threads: usize) -> Result<FindResult, String> {
     if options.what.is_empty() {
         return Err("Type something to search for".into());
     }
     let pattern = build_pattern(&options.what, &options.mode, options.match_case, options.whole_word)?;
     let filters = Filters::parse(&options.filters);
     let max_hits = options.max_hits.clamp(1, 100_000);
-    let mut result = FindResult { hits: Vec::new(), files_searched: 0, files_with_hits: 0, truncated: false };
-
-    let mut walker = WalkDir::new(&options.dir).follow_links(false);
-    if !options.subfolders {
-        walker = walker.max_depth(1);
-    }
     let show_hidden = options.hidden;
-    for entry in walker.into_iter().filter_entry(|e| show_hidden || !is_hidden(e)).filter_map(|e| e.ok()) {
-        if !entry.file_type().is_file() || !filters.accepts(&entry.file_name().to_string_lossy()) {
-            continue;
-        }
-        let too_big = entry.metadata().map(|m| m.len() > MAX_SEARCH_BYTES).unwrap_or(true);
-        if too_big {
-            continue;
-        }
-        let Ok(bytes) = fs::read(entry.path()) else { continue };
-        if looks_binary(&bytes) {
-            continue;
-        }
-        let Ok(decoded) = decode(&bytes, None) else { continue };
-        result.files_searched += 1;
-        let path = entry.path().to_string_lossy();
-        if search_text(&pattern, &path, &decoded.text, &mut result.hits, max_hits) {
-            result.files_with_hits += 1;
-        }
-        if result.hits.len() >= max_hits {
-            result.truncated = true;
-            break;
-        }
-    }
-    Ok(result)
+
+    let hits: Mutex<Vec<Hit>> = Mutex::new(Vec::new());
+    let found = AtomicUsize::new(0);
+    let files_searched = AtomicUsize::new(0);
+    let files_with_hits = AtomicUsize::new(0);
+    let full = AtomicBool::new(false);
+
+    // Version-control ignore files are not applied: a text editor's search looks at everything it is pointed at.
+    let mut walker = WalkBuilder::new(&options.dir);
+    walker
+        .standard_filters(false)
+        .follow_links(false)
+        .threads(threads)
+        .max_depth(if options.subfolders { None } else { Some(1) })
+        .filter_entry(move |entry| show_hidden || !is_hidden(entry.path(), entry.depth()));
+
+    walker.build_parallel().run(|| {
+        Box::new(|entry| {
+            if full.load(Ordering::Relaxed) {
+                return WalkState::Quit;
+            }
+            let Ok(entry) = entry else { return WalkState::Continue };
+            if !entry.file_type().is_some_and(|kind| kind.is_file()) {
+                return WalkState::Continue;
+            }
+            if !filters.accepts(&entry.file_name().to_string_lossy()) {
+                return WalkState::Continue;
+            }
+            if entry.metadata().map(|meta| meta.len() > MAX_SEARCH_BYTES).unwrap_or(true) {
+                return WalkState::Continue;
+            }
+            let room = max_hits.saturating_sub(found.load(Ordering::Relaxed));
+            let Some(file_hits) = search_file(&pattern, entry.path(), room.max(1)) else {
+                return WalkState::Continue;
+            };
+            files_searched.fetch_add(1, Ordering::Relaxed);
+            if !file_hits.is_empty() {
+                files_with_hits.fetch_add(1, Ordering::Relaxed);
+                let total = found.fetch_add(file_hits.len(), Ordering::Relaxed) + file_hits.len();
+                hits.lock().unwrap().extend(file_hits);
+                if total >= max_hits {
+                    full.store(true, Ordering::Relaxed);
+                    return WalkState::Quit;
+                }
+            }
+            WalkState::Continue
+        })
+    });
+
+    // The cores finish in no particular order; the list is shown by file, then line.
+    let mut hits = hits.into_inner().unwrap();
+    hits.sort_by(|a, b| a.path.cmp(&b.path).then(a.line.cmp(&b.line)).then(a.col.cmp(&b.col)));
+    let truncated = hits.len() >= max_hits;
+    hits.truncate(max_hits);
+    Ok(FindResult {
+        hits,
+        files_searched: files_searched.into_inner(),
+        files_with_hits: files_with_hits.into_inner(),
+        truncated,
+    })
+}
+
+#[tauri::command(async)]
+pub fn find_in_files(options: FindOptions) -> Result<FindResult, String> {
+    find(&options, 0)
 }
 
 #[cfg(test)]
@@ -314,5 +381,62 @@ mod tests {
         let mut hits = Vec::new();
         search_text(&pattern, "a", "aaaa\naaaa", &mut hits, 5);
         assert_eq!(hits.len(), 5);
+    }
+
+    fn options(dir: &Path, what: &str) -> FindOptions {
+        FindOptions {
+            dir: dir.to_string_lossy().into_owned(),
+            what: what.into(),
+            mode: "normal".into(),
+            match_case: false,
+            whole_word: false,
+            filters: String::new(),
+            subfolders: true,
+            hidden: false,
+            max_hits: 1000,
+        }
+    }
+
+    #[test]
+    fn folder_search_finds_every_encoding_in_order() {
+        let dir = std::env::temp_dir().join("anonymous-notepad-find-test");
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(dir.join("sub")).unwrap();
+        fs::create_dir_all(dir.join(".secret")).unwrap();
+        fs::write(dir.join("a.txt"), "neon one\nplain\nNEON two").unwrap();
+        fs::write(dir.join("sub").join("b.md"), "\u{feff}a neon sign").unwrap();
+        let utf16: Vec<u8> = [0xFF, 0xFE].into_iter().chain("wide neon".encode_utf16().flat_map(u16::to_le_bytes)).collect();
+        fs::write(dir.join("c.txt"), utf16).unwrap();
+        fs::write(dir.join("d.txt"), crate::files::encode("néon? no: neon café", "windows-1252", false).unwrap()).unwrap();
+        fs::write(dir.join("binary.bin"), [b'n', b'e', b'o', b'n', 0, 1, 2]).unwrap();
+        fs::write(dir.join(".secret").join("e.txt"), "hidden neon").unwrap();
+
+        for threads in [1, 0] {
+            let result = find(&options(&dir, "neon"), threads).unwrap();
+            let names: Vec<String> = result
+                .hits
+                .iter()
+                .map(|hit| format!("{}:{}", Path::new(&hit.path).file_name().unwrap().to_string_lossy(), hit.line))
+                .collect();
+            assert_eq!(names, ["a.txt:1", "a.txt:3", "c.txt:1", "d.txt:1", "b.md:1"], "threads {threads}");
+            assert_eq!(result.files_with_hits, 4);
+            assert!(!result.truncated);
+        }
+
+        let mut with_hidden = options(&dir, "neon");
+        with_hidden.hidden = true;
+        assert_eq!(find(&with_hidden, 0).unwrap().files_with_hits, 5);
+
+        let mut top_only = options(&dir, "neon");
+        top_only.subfolders = false;
+        assert_eq!(find(&top_only, 0).unwrap().files_with_hits, 3);
+
+        let mut limited = options(&dir, "neon");
+        limited.max_hits = 2;
+        let result = find(&limited, 0).unwrap();
+        assert_eq!(result.hits.len(), 2);
+        assert!(result.truncated);
+
+        fs::remove_dir_all(&dir).unwrap();
     }
 }

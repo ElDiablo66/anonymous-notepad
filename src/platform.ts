@@ -54,6 +54,20 @@ export interface FileHash {
   error: string | null;
 }
 
+export interface BigInfo {
+  id: number;
+  name: string;
+  path: string;
+  size: number;
+  lines: number;
+}
+
+export interface BigHit {
+  line: number;
+  col: number;
+  len: number;
+}
+
 export const desktop = "__TAURI_INTERNALS__" in window;
 
 async function call<T>(command: string, args?: Record<string, unknown>): Promise<T> {
@@ -61,7 +75,26 @@ async function call<T>(command: string, args?: Record<string, unknown>): Promise
   return invoke<T>(command, args);
 }
 
-const memory = new Map<string, string>();
+// The browser stand-in keeps "files" in local storage, so a reload can restore tabs the way the desktop app does.
+const MEMORY_KEY = "anonymous-notepad-files";
+
+function loadMemory(): Map<string, string> {
+  try {
+    return new Map(Object.entries(JSON.parse(localStorage.getItem(MEMORY_KEY) ?? "{}") as Record<string, string>));
+  } catch {
+    return new Map();
+  }
+}
+
+const memory = desktop ? new Map<string, string>() : loadMemory();
+
+function keepMemory(): void {
+  try {
+    localStorage.setItem(MEMORY_KEY, JSON.stringify(Object.fromEntries(memory)));
+  } catch {
+    // Storage can be full or blocked; the stand-in then forgets on reload.
+  }
+}
 
 function baseName(path: string): string {
   return path.split(/[\\/]/).pop() ?? path;
@@ -77,6 +110,7 @@ export async function readFile(path: string, encoding?: string): Promise<FileDat
 export async function writeFile(path: string, text: string, encoding: string, bom: boolean): Promise<number | null> {
   if (desktop) return call<number | null>("write_file", { path, text, encoding, bom });
   memory.set(path, text);
+  keepMemory();
   return Date.now();
 }
 
@@ -233,4 +267,33 @@ export async function onFilesOpened(handler: (paths: string[]) => void): Promise
   await getCurrentWebview().onDragDropEvent((event) => {
     if (event.payload.type === "drop") handler(event.payload.paths);
   });
+}
+
+// The large-file viewer. In a plain browser a made-up 30-million-line log stands in for a real file.
+
+const FAKE_LINES = 30_000_000;
+
+export async function bigOpen(path: string): Promise<BigInfo> {
+  if (desktop) return call<BigInfo>("big_open", { path });
+  return { id: 1, name: baseName(path), path, size: 2_147_483_648, lines: FAKE_LINES };
+}
+
+export async function bigRead(id: number, from: number, count: number): Promise<string[]> {
+  if (desktop) return call<string[]>("big_read", { id, from, count });
+  const lines: string[] = [];
+  for (let line = from; line < Math.min(FAKE_LINES, from + count); line += 1) {
+    lines.push(`2026-11-26 12:${String(Math.floor(line / 60) % 60).padStart(2, "0")}:${String(line % 60).padStart(2, "0")} INFO request ${line} served in ${line % 977} ms from node-${line % 12}`);
+  }
+  return lines;
+}
+
+export async function bigFind(id: number, what: string, matchCase: boolean, line: number, col: number, backward: boolean): Promise<BigHit | null> {
+  if (desktop) return call<BigHit | null>("big_find", { id, what, mode: "normal", matchCase, wholeWord: false, line, col, backward });
+  const step = 1_000_000;
+  const next = backward ? Math.ceil(line / step) * step - step : Math.floor(line / step) * step + step;
+  return next >= 0 && next < FAKE_LINES ? { line: next, col: 20, len: 4 } : null;
+}
+
+export async function bigClose(id: number): Promise<void> {
+  if (desktop) await call("big_close", { id });
 }

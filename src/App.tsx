@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { handleKey, type MenuItem } from "./commands";
 import { ContextMenu, MenuBar, openContextMenu } from "./components/Menus";
 import { Logo, Postcard, Sunset } from "./components/Art";
+import { BigViewer } from "./components/BigViewer";
 import { StartScreen, Toolbar } from "./components/Chrome";
 import { FindPanel, ResultsPanel } from "./components/FindPanel";
 import { AskDialog, Picker, Sheet, Toast } from "./components/Overlays";
@@ -50,7 +51,12 @@ function EditorPane() {
   }, []);
 
   useEffect(() => {
-    if (activeId) show(activeId);
+    if (!activeId) return;
+    const id = activeId;
+    // A tab restored from the last session reads its file here, the first time it is shown.
+    void files.ensureLoaded(id).then(() => {
+      if (get().activeId === id) show(id);
+    });
   }, [activeId]);
 
   return (
@@ -70,7 +76,8 @@ function EditorPane() {
       ) : null}
       {art && !start ? <Sunset className="editor-art" /> : null}
       {start ? <StartScreen /> : null}
-      <div ref={host} className="editor-host" onContextMenu={(event) => openContextMenu(event, editorMenu)} />
+      {doc?.big ? <BigViewer key={doc.id} doc={doc} /> : null}
+      <div ref={host} className="editor-host" hidden={Boolean(doc?.big)} onContextMenu={(event) => openContextMenu(event, editorMenu)} />
     </main>
   );
 }

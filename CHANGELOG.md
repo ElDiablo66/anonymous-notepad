@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.3.0, 26 November 2026
+
+Added
+
+- Large-file viewer. Files over 50 MB open in a read-only viewer that reads only the lines on screen. A 2 GB log with 30 million lines opened in under a second in testing. It has its own go-to-line and find, and files up to 256 MB can be moved into the editor from there.
+- Benchmarks you can run yourself: `cargo run --release --example bench`.
+
+Faster
+
+- Find in files runs on every processor core. On 12,033 files it took 77 ms where one core took 775 ms (no matches), and 680 ms where one core took 1,689 ms (44,308 matches), on a 16-core PC.
+- Tabs restored from the last session read their file the first time you look at them, so a session with hundreds of tabs opens as fast as one with a single tab.
+
+Changed
+
+- Find in files now skips files over 64 MB (it was 32 MB) and lists results sorted by file, then line.
+
 ## 0.2.1, 26 November 2026
 
 Fixed

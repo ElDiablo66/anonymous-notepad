@@ -68,7 +68,8 @@ export function FindPanel() {
     set({ results: { title, hits, note }, bottom: "results" });
   };
 
-  const findAll = (everyOpenDoc: boolean) => {
+  const findAll = async (everyOpenDoc: boolean) => {
+    if (everyOpenDoc) await files.loadAll();
     const hits = search.findAll(options, everyOpenDoc);
     if (!hits) return report("invalid");
     showResults(`"${options.what}" in ${everyOpenDoc ? "open files" : (activeDoc()?.name ?? "this file")}`, hits);
@@ -259,10 +260,10 @@ export function FindPanel() {
               >
                 Count
               </button>
-              <button type="button" className="btn" onClick={() => findAll(false)}>
+              <button type="button" className="btn" onClick={() => void findAll(false)}>
                 Find all in this file
               </button>
-              <button type="button" className="btn" onClick={() => findAll(true)}>
+              <button type="button" className="btn" onClick={() => void findAll(true)}>
                 Find all in open files
               </button>
             </>
@@ -296,7 +297,8 @@ export function FindPanel() {
               <button
                 type="button"
                 className="btn"
-                onClick={() => {
+                onClick={async () => {
+                  await files.loadAll();
                   const total = search.replaceAllOpen(options);
                   setMessage({ text: `${plural(total, "match")} replaced in ${get().docs.length} open files`, bad: total === 0 });
                 }}

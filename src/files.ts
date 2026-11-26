@@ -7,6 +7,15 @@ import { activeDoc, ask, type Doc, type Eol, get, newId, patchDoc, set, toast } 
 const closedPaths: string[] = [];
 const RECENT_LIMIT = 15;
 
+/** Files larger than this open in the read-only viewer instead of the editor. */
+export const BIG_BYTES = 50 * 1024 * 1024;
+/** The editor keeps the whole text in memory; the backend refuses files above this. */
+export const EDITOR_LIMIT = 256 * 1024 * 1024;
+
+/** Session entries for tabs whose files have not been read yet. */
+const pendingDocs = new Map<string, SavedDoc>();
+const loading = new Map<string, Promise<void>>();
+
 function describe(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
@@ -33,6 +42,8 @@ function blankDoc(overrides: Partial<Doc>): Doc {
     mtime: null,
     color: 0,
     changedOnDisk: false,
+    pending: false,
+    big: null,
     ...overrides,
   };
 }
@@ -70,7 +81,25 @@ function isPlaceholder(doc: Doc): boolean {
   return !doc.path && !doc.dirty && snapshot(doc.id)?.text === "";
 }
 
-export async function openPaths(paths: string[]): Promise<void> {
+/** Adds a tab, taking the place of the empty first tab when that is all there is. */
+function insertDoc(doc: Doc): void {
+  const docs = get().docs;
+  const placeholder = docs.length === 1 && isPlaceholder(docs[0]) ? docs[0] : null;
+  set({ docs: placeholder ? [doc] : [...docs, doc], activeId: doc.id });
+  if (placeholder) removeDoc(placeholder.id);
+}
+
+/** Opens a file in the read-only large-file viewer. */
+export async function openBig(path: string): Promise<void> {
+  const info = await platform.bigOpen(path);
+  const doc = blankDoc({ name: info.name, path: info.path, readOnly: true, big: { id: info.id, lines: info.lines, size: info.size } });
+  // The editor gets an empty read-only text for this tab, so editing commands have nothing to change.
+  createDoc({ id: doc.id, text: "", readOnly: true });
+  insertDoc(doc);
+  remember(info.path);
+}
+
+export async function openPaths(paths: string[], options: { editor?: boolean } = {}): Promise<void> {
   for (const path of paths) {
     const existing = get().docs.find((doc) => doc.path?.toLowerCase() === path.toLowerCase());
     if (existing) {
@@ -78,6 +107,11 @@ export async function openPaths(paths: string[]): Promise<void> {
       continue;
     }
     try {
+      const [stat] = await platform.statFiles([path]);
+      if (stat && stat.size > BIG_BYTES && !options.editor) {
+        await openBig(path);
+        continue;
+      }
       const file = await platform.readFile(path);
       const doc = blankDoc({
         name: file.name,
@@ -89,15 +123,64 @@ export async function openPaths(paths: string[]): Promise<void> {
         readOnly: file.read_only,
       });
       createDoc({ id: doc.id, text: file.text, readOnly: file.read_only });
-      const docs = get().docs;
-      const placeholder = docs.length === 1 && isPlaceholder(docs[0]) ? docs[0] : null;
-      set({ docs: placeholder ? [doc] : [...docs, doc], activeId: doc.id });
-      if (placeholder) removeDoc(placeholder.id);
+      insertDoc(doc);
       remember(file.path);
       void setLanguage(doc.id, detectLanguage(file.name));
     } catch (error) {
       toast(describe(error));
     }
+  }
+}
+
+/** Moves a file from the viewer into the editor, which loads all of it into memory. */
+export async function openInEditor(id: string): Promise<void> {
+  const doc = get().docs.find((d) => d.id === id);
+  if (!doc?.path || !doc.big) return;
+  const path = doc.path;
+  dropDoc(id);
+  closedPaths.pop();
+  await openPaths([path], { editor: true });
+}
+
+async function loadPending(doc: Doc): Promise<void> {
+  const saved = pendingDocs.get(doc.id);
+  const path = doc.path as string;
+  try {
+    const [stat] = await platform.statFiles([path]);
+    if (saved?.big || (stat && stat.size > BIG_BYTES)) {
+      const info = await platform.bigOpen(path);
+      createDoc({ id: doc.id, text: "", readOnly: true });
+      patchDoc(doc.id, { pending: false, readOnly: true, big: { id: info.id, lines: info.lines, size: info.size } });
+    } else {
+      const file = await platform.readFile(path, !saved || saved.encoding === "UTF-8" ? undefined : saved.encoding);
+      createDoc({ id: doc.id, text: file.text, readOnly: file.read_only, cursor: saved?.cursor, bookmarks: saved?.bookmarks });
+      patchDoc(doc.id, { pending: false, mtime: file.mtime, readOnly: file.read_only, bom: file.bom });
+      await setLanguage(doc.id, doc.lang);
+    }
+    pendingDocs.delete(doc.id);
+  } catch (error) {
+    toast(`${doc.name} could not be reopened: ${describe(error)}`);
+    dropDoc(doc.id);
+    closedPaths.pop();
+  }
+}
+
+/** Reads a restored tab's file the first time the tab is needed. Resolves at once for loaded tabs. */
+export function ensureLoaded(id: string): Promise<void> {
+  const doc = get().docs.find((d) => d.id === id);
+  if (!doc?.pending) return Promise.resolve();
+  let job = loading.get(id);
+  if (!job) {
+    job = loadPending(doc).finally(() => loading.delete(id));
+    loading.set(id, job);
+  }
+  return job;
+}
+
+/** Reads every tab that is still waiting. Search and replace across open files need all of them. */
+export async function loadAll(): Promise<void> {
+  for (const doc of get().docs) {
+    if (doc.pending) await ensureLoaded(doc.id);
   }
 }
 
@@ -128,9 +211,19 @@ async function writeDoc(doc: Doc, path: string): Promise<number | null> {
   }
 }
 
+/** True when the tab's text is in the editor and may be written to disk. */
+function canSave(doc: Doc | undefined): doc is Doc {
+  if (!doc) return false;
+  if (doc.big) {
+    toast("The large-file viewer is read-only, so there is nothing to save");
+    return false;
+  }
+  return !doc.pending;
+}
+
 export async function saveAs(id: string): Promise<boolean> {
   const doc = get().docs.find((d) => d.id === id);
-  if (!doc) return false;
+  if (!canSave(doc)) return false;
   const path = await platform.pickSavePath(doc.path ?? `${doc.name}.txt`);
   if (!path) return false;
   try {
@@ -150,7 +243,7 @@ export async function saveAs(id: string): Promise<boolean> {
 
 export async function save(id: string): Promise<boolean> {
   const doc = get().docs.find((d) => d.id === id);
-  if (!doc) return false;
+  if (!canSave(doc)) return false;
   if (!doc.path) return saveAs(id);
   try {
     const mtime = await writeDoc(doc, doc.path);
@@ -165,7 +258,7 @@ export async function save(id: string): Promise<boolean> {
 
 export async function saveCopy(id: string): Promise<void> {
   const doc = get().docs.find((d) => d.id === id);
-  if (!doc) return;
+  if (!canSave(doc)) return;
   const path = await platform.pickSavePath(doc.path ?? `${doc.name}.txt`);
   if (!path) return;
   try {
@@ -178,14 +271,14 @@ export async function saveCopy(id: string): Promise<void> {
 
 export async function saveAll(): Promise<void> {
   for (const doc of get().docs) {
-    if (doc.dirty) await save(doc.id);
+    if (doc.dirty && !doc.pending && !doc.big) await save(doc.id);
   }
 }
 
 /** Saves every changed file that already has a path. Untitled tabs are left to the session. */
 export async function saveNamed(): Promise<void> {
   for (const doc of get().docs) {
-    if (doc.dirty && doc.path && !doc.changedOnDisk) await save(doc.id);
+    if (doc.dirty && doc.path && !doc.changedOnDisk && !doc.pending && !doc.big) await save(doc.id);
   }
 }
 
@@ -195,6 +288,9 @@ function dropDoc(id: string): void {
   if (index < 0) return;
   const path = docs[index].path;
   if (path) closedPaths.push(path);
+  const big = docs[index].big;
+  if (big) void platform.bigClose(big.id);
+  pendingDocs.delete(id);
   const rest = docs.filter((doc) => doc.id !== id);
   removeDoc(id);
   if (rest.length === 0) {
@@ -242,7 +338,11 @@ export async function restoreClosed(): Promise<void> {
 
 async function replaceText(id: string, encoding?: string): Promise<void> {
   const doc = get().docs.find((d) => d.id === id);
-  if (!doc?.path) return;
+  if (!doc?.path || doc.pending) return;
+  if (doc.big) {
+    toast("The large-file viewer already shows the file as it is on disk");
+    return;
+  }
   try {
     const file = await platform.readFile(doc.path, encoding);
     const state = snapshot(id);
@@ -339,7 +439,7 @@ export async function trashActive(): Promise<void> {
 
 /** Flags tabs whose file changed on disk since it was read or saved. */
 export async function checkDisk(): Promise<void> {
-  const docs = get().docs.filter((doc) => doc.path);
+  const docs = get().docs.filter((doc) => doc.path && !doc.pending && !doc.big);
   if (!docs.length) return;
   const stats = await platform.statFiles(docs.map((doc) => doc.path as string));
   docs.forEach((doc, index) => {
@@ -363,6 +463,7 @@ interface SavedDoc {
   text?: string;
   cursor: number;
   bookmarks: number[];
+  big?: boolean;
 }
 
 interface SavedSession {
@@ -377,6 +478,16 @@ export async function saveSession(): Promise<void> {
   const state = get();
   const docs: SavedDoc[] = [];
   for (const doc of state.docs) {
+    if (doc.pending) {
+      // Not read yet, so its saved entry is still exact.
+      const waiting = pendingDocs.get(doc.id);
+      if (waiting) docs.push(waiting);
+      continue;
+    }
+    if (doc.big) {
+      docs.push({ name: doc.name, path: doc.path, encoding: doc.encoding, bom: doc.bom, eol: doc.eol, lang: doc.lang, pinned: doc.pinned, color: doc.color, cursor: 0, bookmarks: [], big: true });
+      continue;
+    }
     const snap = snapshot(doc.id);
     if (!snap) continue;
     const keepText = !doc.path || doc.dirty;
@@ -459,15 +570,9 @@ export async function loadSession(): Promise<void> {
           doc.mtime = stat?.mtime ?? null;
         }
       } else if (saved.path) {
-        try {
-          const file = await platform.readFile(saved.path, saved.encoding === "UTF-8" ? undefined : saved.encoding);
-          createDoc({ id: doc.id, text: file.text, readOnly: file.read_only, cursor: saved.cursor, bookmarks: saved.bookmarks });
-          doc.mtime = file.mtime;
-          doc.readOnly = file.read_only;
-          doc.bom = file.bom;
-        } catch {
-          continue;
-        }
+        // The file is read when the tab is first shown, so a session with hundreds of tabs still opens at once.
+        doc.pending = true;
+        pendingDocs.set(doc.id, saved);
       } else {
         continue;
       }
@@ -476,7 +581,9 @@ export async function loadSession(): Promise<void> {
     if (restored.length) {
       const active = restored[Math.min(session.active ?? 0, restored.length - 1)];
       set({ docs: restored, activeId: active.id });
-      for (const doc of restored) void setLanguage(doc.id, doc.lang);
+      for (const doc of restored) {
+        if (!doc.pending) void setLanguage(doc.id, doc.lang);
+      }
     }
   }
 

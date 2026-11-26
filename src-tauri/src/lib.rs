@@ -1,5 +1,6 @@
-mod files;
-mod search;
+pub mod bigfile;
+pub mod files;
+pub mod search;
 
 use md5::Md5;
 use sha1::Sha1;
@@ -149,6 +150,10 @@ pub fn run() {
             files::rename_file,
             files::trash_file,
             search::find_in_files,
+            bigfile::big_open,
+            bigfile::big_read,
+            bigfile::big_find,
+            bigfile::big_close,
             hash_text,
             hash_files,
             store_load,

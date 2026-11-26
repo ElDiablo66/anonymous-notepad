@@ -23,6 +23,20 @@ These were picked first because each is visible on the first launch or fixes a t
 
 True since 0.1.0 and worth saying: the installer needs no administrator rights, there is no updater that phones home, the app makes no network requests, and there is no account or assistant.
 
+## Shipped in 0.3.0
+
+| Idea | The need it answers | Effort | Kind |
+| --- | --- | --- | --- |
+| Find in files on every processor core | Searching big folders is slow elsewhere; here 12,033 files take 77 ms | Low | Function |
+| Load restored tabs only when they are first shown | Notepad++ takes 20 to 50 seconds with a few hundred tabs | Medium | Function |
+| Large-file viewer: a read-only, memory-mapped view for files over 50 MB | Sublime Text is praised for multi-gigabyte files; this opened a 2 GB log in 0.9 s | High | Function |
+
+## Shipped in 0.2.1
+
+| Idea | The need it answers | Effort | Kind |
+| --- | --- | --- | --- |
+| Interface size that fits the window, 100% to 200% | Menus and panels were tiny on a very wide screen | Low | Both |
+
 ## Next, in this order
 
 | # | Idea | The need it answers | Effort | Kind |
@@ -31,7 +45,6 @@ True since 0.1.0 and worth saying: the installer needs no administrator rights, 
 | 2 | Burner tab: a tab that is never written to the session file | Windows Notepad's session restore has leaked private text | Low | Both |
 | 3 | Format XML | The other half of the most-used formatter plugins | Low | Function |
 | 4 | Replace in files, with a preview of every change before it is written | The biggest missing search feature | Medium | Function |
-| 5 | Load restored tabs only when they are first shown | Notepad++ takes 20 to 50 seconds with a few hundred tabs | Medium | Function |
 | 6 | Compare two tabs side by side | Compare is the plugin people install first | Medium | Function |
 | 7 | Markdown preview beside the text | Praised in VS Code; Windows Notepad's Markdown is toolbar-driven | Medium | Function |
 | 8 | Mixtapes: named, coloured groups of tabs you can collapse | Tab groups are a top open request in Notepad++ | Medium | Both |
@@ -41,7 +54,7 @@ True since 0.1.0 and worth saying: the installer needs no administrator rights, 
 | 12 | Split view | Two files, or two places in one file, side by side | Medium | Function |
 | 13 | Shortcut remapping, including two-step chords | A top open request in Notepad++ | Medium | Function |
 | 14 | Macro recording | One of the things people love in Notepad++ | High | Function |
-| 15 | Large-file mode: a read-only viewer in Rust for files over 256 MB | Sublime Text is praised for multi-gigabyte files | High | Function |
+| 15 | Follow a growing file in the viewer, like `tail -f` | Log watching; the viewer shows a file as it was when opened | Medium | Function |
 | 16 | Print with a preview | Print preview is an open request in Notepad++ | Medium | Function |
 | 17 | macOS and Linux builds | Notepad++ is Windows only | Medium | Function |
 

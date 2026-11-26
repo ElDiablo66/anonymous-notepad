@@ -2,7 +2,7 @@
 // open the dev server with ?demo and optional &theme=, &glow=, &panel=, &side=, &size=.
 // The desktop app never runs this.
 
-import { addDoc, newDoc } from "./files";
+import { addDoc, newDoc, openBig } from "./files";
 import { desktop } from "./platform";
 import { lastFind } from "./search";
 import { get, set, type SheetName, type SidePanel } from "./store";
@@ -114,6 +114,7 @@ export async function seedDemo(): Promise<void> {
   await addDoc("notes.md", notes, "Markdown");
   await addDoc("settings.json", settings, "JSON");
   set({ activeId: first });
+  if (demoPanel === "big") await openBig("C:\\Logs\\server.log");
 
   const side = params.get("side");
   if (side === "docs" || side === "functions" || side === "folder") set({ side: side as SidePanel });

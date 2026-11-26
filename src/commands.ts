@@ -96,7 +96,15 @@ function active(): string {
   return get().activeId;
 }
 
+/** Find and go-to belong to the viewer's own boxes while a large file is on screen. */
+function viewerTakes(what: "find" | "goto"): boolean {
+  if (!activeDoc()?.big) return false;
+  window.dispatchEvent(new CustomEvent("big-viewer-focus", { detail: what }));
+  return true;
+}
+
 function openFind(tab: FindTab): void {
+  if (tab === "find" && viewerTakes("find")) return;
   set((s) => ({ bottom: "find", findTab: tab, findNonce: s.findNonce + 1 }));
 }
 
@@ -226,6 +234,7 @@ export function pickCommand(): void {
 }
 
 async function goTo(): Promise<void> {
+  if (viewerTakes("goto")) return;
   const { cursor } = get();
   const answer = await ask({
     title: "Go to line",

@@ -2,6 +2,7 @@ import type { MenuItem } from "../commands";
 import { command, encodingLabel, pickLanguage } from "../commands";
 import { uiScale } from "../scale";
 import { set, useStore } from "../store";
+import { formatBytes } from "./BigViewer";
 import { StationDial } from "./Chrome";
 import { openContextMenu } from "./Menus";
 
@@ -38,9 +39,15 @@ export function StatusBar() {
       </button>
       <StationDial />
       <span className="status-fill" />
-      <span title="Characters and lines in this file">
-        {cursor.length.toLocaleString()} chars · {cursor.lines.toLocaleString()} lines
-      </span>
+      {doc.big ? (
+        <span title="Shown by the large-file viewer">
+          {formatBytes(doc.big.size)} · {doc.big.lines.toLocaleString()} lines · read-only viewer
+        </span>
+      ) : (
+        <span title="Characters and lines in this file">
+          {cursor.length.toLocaleString()} chars · {cursor.lines.toLocaleString()} lines
+        </span>
+      )}
       <button type="button" title="Go to line (Ctrl+G)" onClick={() => void command("search.goto")?.run()}>
         Ln {cursor.line.toLocaleString()}, Col {cursor.col}
         {cursor.sel ? ` · Sel ${cursor.sel.toLocaleString()} | ${cursor.selLines}` : ""}

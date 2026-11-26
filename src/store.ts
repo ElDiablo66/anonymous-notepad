@@ -19,6 +19,10 @@ export interface Doc {
   /** 0 is no colour, 1 to 5 pick a tab colour. */
   color: number;
   changedOnDisk: boolean;
+  /** A tab restored from the last session whose file has not been read yet. */
+  pending: boolean;
+  /** Set when the file is shown by the read-only large-file viewer instead of the editor. */
+  big: { id: number; lines: number; size: number } | null;
 }
 
 export interface Settings {

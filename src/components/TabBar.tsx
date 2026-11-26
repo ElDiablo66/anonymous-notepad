@@ -77,6 +77,7 @@ export function TabBar() {
               "tab",
               doc.id === activeId ? "is-active" : "",
               doc.dirty ? "is-dirty" : "",
+              doc.pending ? "is-pending" : "",
               doc.color ? `tab-color-${doc.color}` : "",
               overId === doc.id && dragId !== doc.id ? "is-drop" : "",
             ].join(" ")}
