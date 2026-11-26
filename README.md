@@ -72,7 +72,11 @@ Notepad++ is a native program and stays lighter on memory and faster on big file
 
 ## Install
 
-There is no published release yet. Until the first one is on the [Releases](https://github.com/ElDiablo66/anonymous-notepad/releases) page, build the installer yourself (next section) and run the `.exe` it produces. It installs for the current user and needs no administrator rights.
+1. Open the [latest release](https://github.com/ElDiablo66/anonymous-notepad/releases/latest) and download `Anonymous-Notepad-<version>-setup.exe`.
+2. Run it. It installs for your user only and needs no administrator rights.
+3. The installer is not code signed, so Windows SmartScreen warns the first time. Choose "More info", then "Run anyway". Each release lists the file's SHA-256 if you want to check your download.
+
+To update, download the newer installer and run it over the old one. Your tabs and preferences are kept.
 
 Windows 11 is the only system it has been built on.
 
