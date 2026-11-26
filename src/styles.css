@@ -1722,7 +1722,8 @@ input[type="number"] {
   white-space: pre;
 }
 .big-line.is-hit {
-  background: var(--ed-line);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  box-shadow: inset 3px 0 0 var(--accent);
 }
 .big-number {
   position: sticky;

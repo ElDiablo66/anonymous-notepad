@@ -32,6 +32,8 @@ export function BigViewer({ doc }: { doc: Doc }) {
   const [what, setWhat] = useState("");
   const [matchCase, setMatchCase] = useState(false);
   const [hit, setHit] = useState<platform.BigHit | null>(null);
+  /** The line last jumped to with the Line box, shown highlighted. */
+  const [target, setTarget] = useState<number | null>(null);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -124,6 +126,7 @@ export function BigViewer({ doc }: { doc: Doc }) {
       }
       if (found) {
         setHit(found);
+        setTarget(null);
         goTo(found.line - Math.floor(rows / 3));
       } else {
         setHit(null);
@@ -168,8 +171,13 @@ export function BigViewer({ doc }: { doc: Doc }) {
             aria-label="Go to line"
             onKeyDown={(event) => {
               if (event.key !== "Enter") return;
-              const line = Number.parseInt(event.currentTarget.value.replace(/\D/g, ""), 10);
-              if (line > 0) goTo(line - 1);
+              const typed = Number.parseInt(event.currentTarget.value.replace(/\D/g, ""), 10);
+              if (!(typed > 0)) return;
+              const line = Math.min(big.lines, typed) - 1;
+              setTarget(line);
+              setHit(null);
+              // A few lines of context above it, so the line is not glued to the top edge.
+              goTo(line - Math.min(4, Math.floor(rows / 3)));
             }}
           />
         </label>
@@ -218,7 +226,7 @@ export function BigViewer({ doc }: { doc: Doc }) {
               const number = top + index;
               const marked = hit && hit.line === number;
               return (
-                <div key={number} className={`big-line${marked ? " is-hit" : ""}`}>
+                <div key={number} className={`big-line${marked || target === number ? " is-hit" : ""}`}>
                   <span className="big-number" style={{ minWidth: `${digits + 2}ch` }}>
                     {(number + 1).toLocaleString()}
                   </span>

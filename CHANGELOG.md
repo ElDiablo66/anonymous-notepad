@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.2, 26 November 2026
+
+Fixed
+
+- Large-file viewer: jumping to a line with the Line box now highlights that line, the way a find result is highlighted. It also leaves a few lines of context above it.
+
 ## 0.3.1, 26 November 2026
 
 Fixed
