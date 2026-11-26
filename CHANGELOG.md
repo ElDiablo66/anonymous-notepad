@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.3.1, 26 November 2026
+
+Fixed
+
+- Preferences: rows ran into each other once the sheet was taller than the window, which a larger interface size makes likely. The size buttons sat on top of "Text size" and the reset button covered the web search address.
+- At a large interface size in a small window the menu bar, tabs and status bar grew wider than the window. They now stay inside it, and the toolbar steps aside when there is no room.
+- The start screen shrinks to fit instead of running off the editor area.
+
+Changed
+
+- Preferences has a hairline between settings and more room between groups, and "Interface size" has its own full-width row of buttons.
+
 ## 0.3.0, 26 November 2026
 
 Added

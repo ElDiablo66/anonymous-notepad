@@ -17,10 +17,11 @@ import {
   Swap,
   TextAlignLeft,
 } from "@phosphor-icons/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { command, focusEditor } from "../commands";
 import { demoPanel } from "../demo";
 import * as files from "../files";
+import { sizeForWindow } from "../scale";
 import { setSetting, useStore } from "../store";
 import { DIAL_END, DIAL_START, neighbour, stationFor, stations, type ThemeId } from "../themes";
 import { Postcard } from "./Art";
@@ -200,10 +201,33 @@ const starts: [id: string, label: string][] = [
  * Shown over an empty first tab. Only its buttons take the mouse, so the
  * editor underneath still gets clicks and typing; the first character hides it.
  */
+/** Roughly how much room the start screen needs at 100%. */
+const START_WIDTH = 740;
+const START_HEIGHT = 520;
+
 export function StartScreen() {
   const recent = useStore((s) => s.recent);
+  const uiSize = useStore((s) => s.settings.uiSize);
+  const box = useRef<HTMLElement>(null);
+  const [scale, setScale] = useState(1);
+
+  // It follows the interface size, but never grows past the room the editor area has.
+  useLayoutEffect(() => {
+    const element = box.current;
+    if (!element) return;
+    const fit = () => {
+      const wanted = uiSize ?? sizeForWindow();
+      setScale(Math.max(0.5, Math.min(wanted, element.clientWidth / START_WIDTH, element.clientHeight / START_HEIGHT)));
+    };
+    fit();
+    const watcher = new ResizeObserver(fit);
+    watcher.observe(element);
+    return () => watcher.disconnect();
+  }, [uiSize]);
+
   return (
-    <section className="start" aria-label="Start">
+    <section ref={box} className="start" aria-label="Start">
+      <div className="start-inner" style={{ zoom: scale }}>
       <div className="start-card">
         <Postcard className="start-art" label="A striped sun setting behind a city skyline and palm trees" />
         <div className="start-copy">
@@ -243,6 +267,7 @@ export function StartScreen() {
             ))}
           </ul>
         </div>
+      </div>
       </div>
     </section>
   );

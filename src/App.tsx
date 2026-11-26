@@ -88,6 +88,7 @@ export function App() {
   const glow = useStore((s) => s.settings.glow);
   const uiSize = useStore((s) => s.settings.uiSize);
   const [fitted, setFitted] = useState(sizeForWindow);
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const ui = uiSize ?? fitted;
   const toolbar = useStore((s) => s.settings.toolbar);
   const zen = useStore((s) => s.zen);
@@ -106,7 +107,16 @@ export function App() {
   }, [theme, fontSize, glow, ui]);
 
   useEffect(() => {
-    const refit = () => setFitted(sizeForWindow());
+    // Media queries count real pixels; a larger interface size leaves fewer of them to work with.
+    const room = windowWidth / ui;
+    document.documentElement.dataset.width = room < 760 ? "tight" : room < 1080 ? "narrow" : "wide";
+  }, [windowWidth, ui]);
+
+  useEffect(() => {
+    const refit = () => {
+      setFitted(sizeForWindow());
+      setWindowWidth(window.innerWidth);
+    };
     window.addEventListener("resize", refit);
     return () => window.removeEventListener("resize", refit);
   }, []);

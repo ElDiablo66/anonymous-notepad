@@ -195,12 +195,12 @@ function Preferences() {
           </button>
         ))}
       </div>
-      <div className="pref pref-wrap">
+      <div className="pref-stack">
         <span>
           <strong>Interface size</strong>
           <small>Fit picks a size from the window's width. Right now that is {Math.round(sizeForWindow() * 100)}%.</small>
         </span>
-        <div className="seg seg-small" role="radiogroup" aria-label="Interface size">
+        <div className="seg seg-fill" role="radiogroup" aria-label="Interface size">
           <button type="button" role="radio" aria-checked={settings.uiSize === null} className={settings.uiSize === null ? "is-on" : ""} onClick={() => setSetting("uiSize", null)}>
             Fit
           </button>
@@ -258,7 +258,7 @@ function Preferences() {
 
       <h3>Start-up</h3>
       <Toggle name="restoreSession" label="Reopen tabs from last time" hint="Unsaved text is kept too, so closing the app never asks" />
-      <label className="pref pref-stack">
+      <label className="pref-stack">
         <span>
           <strong>Web search address</strong>
           <small>The selected text is added to the end</small>
@@ -267,7 +267,7 @@ function Preferences() {
       </label>
       <button
         type="button"
-        className="btn"
+        className="btn sheet-last"
         onClick={() => {
           set({ settings: defaultSettings });
           applySettings();
@@ -535,7 +535,7 @@ export function Sheet() {
           <X size={16} weight="bold" />
         </button>
       </header>
-      <div className="sheet-body">{sheet.body()}</div>
+      <div className={`sheet-body sheet-${name}`}>{sheet.body()}</div>
     </aside>
   );
 }

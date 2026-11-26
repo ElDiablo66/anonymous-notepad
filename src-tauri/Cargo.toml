@@ -1,6 +1,6 @@
 [package]
 name = "anonymous-notepad"
-version = "0.3.0"
+version = "0.3.1"
 description = "A fast text and code editor with tabs, powerful search and a neon sunset look"
 authors = ["El Diablo 59"]
 edition = "2021"

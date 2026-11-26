@@ -122,5 +122,5 @@ export async function seedDemo(): Promise<void> {
     lastFind.what = "station";
     set({ bottom: "find", findTab: demoPanel });
   }
-  if (demoPanel === "preferences" || demoPanel === "about" || demoPanel === "shortcuts") set({ sheet: demoPanel as SheetName });
+  if (["preferences", "about", "shortcuts", "hash", "summary", "column"].includes(demoPanel ?? "")) set({ sheet: demoPanel as SheetName });
 }
