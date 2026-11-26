@@ -1,0 +1,34 @@
+/* Shown before the app's own stylesheet arrives. Kept in a file: an inline block would change the style policy of the desktop shell. */
+
+#splash {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 20px;
+  background: radial-gradient(60% 50% at 50% 60%, #3a1466, #1a0f35 70%);
+  transition: opacity 0.25s;
+}
+#splash img {
+  border-radius: 20px;
+  box-shadow: 0 0 44px rgba(255, 79, 163, 0.5);
+}
+#splash span {
+  width: 132px;
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #ff4fa3, #ff9a3c, #ffe66d, #ff4fa3);
+  background-size: 200% 100%;
+  animation: splash 1.1s linear infinite;
+}
+#splash.is-done {
+  opacity: 0;
+  pointer-events: none;
+}
+@keyframes splash {
+  to {
+    background-position: -200% 0;
+  }
+}

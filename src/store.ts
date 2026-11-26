@@ -27,6 +27,8 @@ export interface Settings {
   glow: "off" | "soft" | "full";
   toolbar: boolean;
   startScreen: boolean;
+  /** Interface size as a multiplier, or null to fit the window. */
+  uiSize: number | null;
   fontSize: number;
   tabSize: number;
   insertSpaces: boolean;
@@ -50,6 +52,7 @@ export const defaultSettings: Settings = {
   glow: "soft",
   toolbar: true,
   startScreen: true,
+  uiSize: null,
   fontSize: 14,
   tabSize: 4,
   insertSpaces: false,

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { handleKey, type MenuItem } from "./commands";
 import { ContextMenu, MenuBar, openContextMenu } from "./components/Menus";
 import { Logo, Postcard, Sunset } from "./components/Art";
@@ -12,6 +12,7 @@ import { applySettings, hooks, mount, remeasure, show, unmount } from "./editor/
 import { demo, demoPanel, seedDemo } from "./demo";
 import * as files from "./files";
 import * as platform from "./platform";
+import { setUiScale, sizeForWindow } from "./scale";
 import { get, onChange, patchDoc, set, useStore } from "./store";
 
 const editorMenu: MenuItem[] = [
@@ -78,6 +79,9 @@ export function App() {
   const theme = useStore((s) => s.settings.theme);
   const fontSize = useStore((s) => s.settings.fontSize);
   const glow = useStore((s) => s.settings.glow);
+  const uiSize = useStore((s) => s.settings.uiSize);
+  const [fitted, setFitted] = useState(sizeForWindow);
+  const ui = uiSize ?? fitted;
   const toolbar = useStore((s) => s.settings.toolbar);
   const zen = useStore((s) => s.zen);
   const bottom = useStore((s) => s.bottom);
@@ -89,9 +93,16 @@ export function App() {
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     document.documentElement.dataset.glow = glow;
-    document.documentElement.style.setProperty("--ed-size", `${fontSize}px`);
+    setUiScale(ui);
+    document.documentElement.style.setProperty("--ed-size", `${fontSize * ui}px`);
     remeasure();
-  }, [theme, fontSize, glow]);
+  }, [theme, fontSize, glow, ui]);
+
+  useEffect(() => {
+    const refit = () => setFitted(sizeForWindow());
+    window.addEventListener("resize", refit);
+    return () => window.removeEventListener("resize", refit);
+  }, []);
 
   useEffect(() => {
     // The code font arrives after the first paint and has different metrics from the fallback.

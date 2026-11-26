@@ -1,5 +1,6 @@
 import type { MenuItem } from "../commands";
 import { command, encodingLabel, pickLanguage } from "../commands";
+import { uiScale } from "../scale";
 import { set, useStore } from "../store";
 import { StationDial } from "./Chrome";
 import { openContextMenu } from "./Menus";
@@ -18,7 +19,7 @@ const encodingMenu: MenuItem[] = [
 
 function menuAbove(event: React.MouseEvent<HTMLElement>, items: MenuItem[]): void {
   const box = event.currentTarget.getBoundingClientRect();
-  openContextMenu({ clientX: box.left, clientY: box.top - 6 - items.length * 28, preventDefault: () => event.preventDefault() }, items);
+  openContextMenu({ clientX: box.left, clientY: box.top - (6 + items.length * 28) * uiScale(), preventDefault: () => event.preventDefault() }, items);
 }
 
 export function StatusBar() {

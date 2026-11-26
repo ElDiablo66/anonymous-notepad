@@ -23,6 +23,7 @@ import { applySettings, focusEditor, getView, languageNames, markUnsaved, PLAIN,
 import * as ops from "./editops";
 import * as files from "./files";
 import * as platform from "./platform";
+import { sizes } from "./scale";
 import { clearStyle, findNext, lastFind, styleSelection } from "./search";
 import { neighbour, stations } from "./themes";
 import {
@@ -639,6 +640,15 @@ for (const station of stations) {
     run: () => setSetting("theme", station.id),
   });
 }
+add({ id: "size.fit", title: "Interface size: fit the window", checked: () => get().settings.uiSize === null, run: () => setSetting("uiSize", null) });
+for (const size of sizes) {
+  add({
+    id: `size.${Math.round(size * 100)}`,
+    title: `Interface size: ${Math.round(size * 100)}%`,
+    checked: () => get().settings.uiSize === size,
+    run: () => setSetting("uiSize", size),
+  });
+}
 add({ id: "view.toolbar", title: "Show toolbar", checked: () => get().settings.toolbar, run: () => toggleSetting("toolbar") });
 
 add({ id: "tools.hash", title: "Hashes: MD5, SHA-1, SHA-256, SHA-512…", run: () => openSheet("hash") });
@@ -809,7 +819,8 @@ export const menus: Menu[] = [
       "view.lineNumbers",
       "view.toolbar",
       { label: "Theme", items: [...stations.map((station) => `theme.${station.id}`), "-", "theme.next", "theme.previous"] },
-      { label: "Zoom", items: ["view.zoomIn", "view.zoomOut", "view.zoomReset"] },
+      { label: "Interface size", items: ["size.fit", ...sizes.map((size) => `size.${Math.round(size * 100)}`)] },
+      { label: "Text zoom", items: ["view.zoomIn", "view.zoomOut", "view.zoomReset"] },
       { label: "Fold", items: ["view.foldAll", "view.unfoldAll", "view.fold", "view.unfold"] },
       "-",
       "view.folder",

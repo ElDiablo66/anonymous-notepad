@@ -4,6 +4,7 @@ import { allCommands, focusEditor } from "../commands";
 import { applySettings, getView, snapshot } from "../editor/core";
 import { columnInsert, selectedText } from "../editops";
 import * as platform from "../platform";
+import { sizeForWindow, sizes } from "../scale";
 import { activeDoc, defaultSettings, set, setSetting, type Settings, type SheetName, toast, useStore } from "../store";
 import { numberColumn, summarize } from "../textops";
 import { stations } from "../themes";
@@ -193,6 +194,22 @@ function Preferences() {
             <small>{theme.frequency.toFixed(1)} on the dial</small>
           </button>
         ))}
+      </div>
+      <div className="pref pref-wrap">
+        <span>
+          <strong>Interface size</strong>
+          <small>Fit picks a size from the window's width. Right now that is {Math.round(sizeForWindow() * 100)}%.</small>
+        </span>
+        <div className="seg seg-small" role="radiogroup" aria-label="Interface size">
+          <button type="button" role="radio" aria-checked={settings.uiSize === null} className={settings.uiSize === null ? "is-on" : ""} onClick={() => setSetting("uiSize", null)}>
+            Fit
+          </button>
+          {sizes.map((size) => (
+            <button key={size} type="button" role="radio" aria-checked={settings.uiSize === size} className={settings.uiSize === size ? "is-on" : ""} onClick={() => setSetting("uiSize", size)}>
+              {Math.round(size * 100)}%
+            </button>
+          ))}
+        </div>
       </div>
       <label className="pref">
         <span>

@@ -25,6 +25,7 @@ The feature choices come from reading what users of Notepad++ and Windows Notepa
 - Neon glow in three levels: off, soft (the frame only) or full (the code glows too).
 - Every theme's text and code colours are tested to a contrast of at least 4.5:1.
 - All of it can be switched off in Preferences, including the toolbar, the start screen and the corner sunset.
+- Interface size fits the window: on a very wide screen the menus, tabs and panels grow so nothing looks lost. Sizes from 100% to 200% can also be picked by hand.
 
 | | | |
 | --- | --- | --- |

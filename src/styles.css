@@ -60,6 +60,7 @@
   --body: "Instrument Sans Variable", "Segoe UI Variable Text", "Segoe UI", sans-serif;
   --mono: "JetBrains Mono Variable", "Cascadia Code", Consolas, monospace;
   --ed-size: 14px;
+  --ui: 1;
 
   --z-dock: 10;
   --z-sheet: 20;
@@ -342,7 +343,7 @@ kbd {
 /* Frame */
 
 .app {
-  height: 100dvh;
+  height: 100%;
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr) auto;
   position: relative;
@@ -444,7 +445,7 @@ kbd {
   z-index: var(--z-menu);
   min-width: 230px;
   max-width: 460px;
-  max-height: calc(100dvh - 12px);
+  max-height: calc((100dvh - 12px) / var(--ui));
   overflow-y: auto;
   padding: 5px;
   background: var(--solid);
@@ -657,6 +658,8 @@ kbd {
 .center {
   flex: 1;
   min-width: 0;
+  min-height: 0;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
@@ -664,6 +667,7 @@ kbd {
 .editor-area {
   flex: 1;
   min-height: 0;
+  overflow: hidden;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -682,7 +686,7 @@ kbd {
   position: absolute;
   right: 22px;
   bottom: 0;
-  width: min(300px, 38%);
+  width: min(calc(300px * var(--ui)), 38%);
   opacity: 0.13;
   pointer-events: none;
   color: var(--text-soft);
@@ -895,6 +899,7 @@ input[type="number"] {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 220px;
   gap: 14px;
+  max-width: 1180px;
   padding: 9px 10px 11px;
 }
 .find-fields {
@@ -1255,6 +1260,10 @@ input[type="number"] {
   color: var(--text-soft);
   font-size: 11.5px;
 }
+.pref-wrap {
+  flex-wrap: wrap;
+  cursor: default;
+}
 .pref-stack {
   display: grid;
   gap: 5px;
@@ -1577,6 +1586,24 @@ input[type="number"] {
 .is-zen .cm-content {
   max-width: 96ch;
   margin: 0 auto;
+}
+
+/* Interface size. Everything around the text is scaled; the text itself is scaled
+   through its font size, so the editor keeps measuring in real pixels. */
+
+.topbar,
+.tabbar,
+.statusbar,
+.side,
+.dock,
+.sheet,
+.start,
+.editor-area > .banner,
+.picker,
+.ask,
+.toast,
+.ui-zoom {
+  zoom: var(--ui);
 }
 
 /* Code colours. The classes come from the editor; the values come from the theme. */

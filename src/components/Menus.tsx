@@ -1,6 +1,7 @@
 import { CaretRight, Check } from "@phosphor-icons/react";
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { command, focusEditor, type MenuItem, menus } from "../commands";
+import { uiScale } from "../scale";
 
 interface Point {
   left: number;
@@ -41,7 +42,7 @@ function MenuList({ items, at, close }: ListProps) {
   };
 
   return (
-    <ul ref={ref} className="menu-list" role="menu" style={{ left: place.left, top: place.top }}>
+    <ul ref={ref} className="menu-list" role="menu" style={{ left: place.left / uiScale(), top: place.top / uiScale() }}>
       {items.map((item, index) => {
         if (item === "-") return <li key={index} className="menu-rule" role="separator" />;
         if (typeof item === "string") {
@@ -175,7 +176,7 @@ export function ContextMenu() {
   useDismiss(current !== null, close, ref);
   if (!current) return null;
   return (
-    <div ref={ref}>
+    <div ref={ref} className="ui-zoom">
       <MenuList items={current.items} at={{ left: current.x, top: current.y, flipLeft: current.x }} close={close} />
     </div>
   );

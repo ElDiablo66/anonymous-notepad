@@ -1,5 +1,5 @@
 // Sample content for looking at the interface in a plain browser:
-// open the dev server with ?demo and optional &theme=, &glow=, &panel=, &side=.
+// open the dev server with ?demo and optional &theme=, &glow=, &panel=, &side=, &size=.
 // The desktop app never runs this.
 
 import { addDoc, newDoc } from "./files";
@@ -101,6 +101,7 @@ export async function seedDemo(): Promise<void> {
       theme: stations.some((station) => station.id === theme) ? (theme as ThemeId) : "vice-night",
       glow: glow === "off" || glow === "full" ? glow : "soft",
       minimap: params.has("map"),
+      uiSize: Number(params.get("size")) || null,
     },
     recent: ["C:\\Projects\\night-drive\\src\\radio.rs", "C:\\Projects\\night-drive\\notes.md", "C:\\Projects\\night-drive\\settings.json"],
   });

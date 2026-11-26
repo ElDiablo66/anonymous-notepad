@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.2.1, 26 November 2026
+
+Fixed
+
+- The editor came up unstyled in the installed app: pink lines across the top, the line number at the window's edge and odd typing. The splash added in 0.2.0 carried an inline style block, which made the desktop shell refuse the styles the editor adds at run time. The splash styles are in a file now, and a test keeps inline styles out of the page.
+- The start screen could sit off-centre.
+
+Added
+
+- Interface size. "Fit" picks a size from the window's width, so menus, tabs and panels are readable on a very wide screen; 100% to 200% can be picked by hand. It is in Preferences and under View.
+
+Changed
+
+- "Zoom" in the View menu is now "Text zoom", to tell it apart from the interface size.
+
 ## 0.2.0, 26 November 2026
 
 Added
