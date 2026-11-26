@@ -1,0 +1,23 @@
+name: Feature request
+description: Something you'd like the editor to do
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: The app stays offline, so features that need the internet are out of scope. The [roadmap](https://github.com/ElDiablo66/anonymous-notepad/blob/main/docs/roadmap.md) lists what is already planned.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What you're trying to do
+      description: The job, not the button. "I keep log files open all day and lose my place" beats "add a pin button".
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: How you picture it working
+  - type: textarea
+    id: elsewhere
+    attributes:
+      label: How other editors handle it
+      description: Optional. Describe it in your own words; please don't paste their text or screenshots of their code.

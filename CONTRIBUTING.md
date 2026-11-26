@@ -34,7 +34,26 @@ npm run notices
 cargo test --manifest-path src-tauri/Cargo.toml
 ```
 
-All four run on every pull request.
+All four run on every pull request. Run `npm run build` and `npm run notices` once before `cargo test`, because the Rust build expects the web files and the notices file to exist.
+
+`npm test` covers the line, case, number and conversion tools and checks the contrast of every theme. `cargo test` covers encoding detection and round trips, line endings, find in files across a folder, file filters, the large-file viewer, the hashes and the session backup.
+
+## Map of the source
+
+| Part | Where |
+| --- | --- |
+| Reading, writing, encodings, folder listing | `src-tauri/src/files.rs` |
+| Find in files | `src-tauri/src/search.rs` |
+| Large-file viewer | `src-tauri/src/bigfile.rs`, `src/components/BigViewer.tsx` |
+| Benchmarks | `src-tauri/examples/bench.rs` |
+| Hashes, saved session, command line | `src-tauri/src/lib.rs` |
+| Editor set-up, bookmarks, marks | `src/editor/` |
+| Every command, the menus and the keys | `src/commands.ts` |
+| Themes and their places on the dial | `src/themes.ts`, `src/styles.css` |
+| Line, case, number and conversion tools | `src/textops.ts` |
+| Interface | `src/components/` |
+| Logo, screenshots and README pictures | `Design/` (the README pictures are drawn from `Design/source/`) |
+| Research and roadmap | `docs/` |
 
 ## Where things go
 

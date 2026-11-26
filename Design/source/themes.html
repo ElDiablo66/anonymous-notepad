@@ -1,0 +1,50 @@
+<!doctype html>
+<!-- Source of Design/readme/themes.png. Render like hero.html, at 1280x760. -->
+eadme	hemes.png. -->
+<meta charset="utf-8" />
+<title>Anonymous Notepad themes</title>
+<link rel="stylesheet" href="poster.css" />
+<style>
+  .t1 { left: 470px; top: 40px; transform: rotate(-2deg); }
+  .t2 { left: 880px; top: 52px; transform: rotate(2.5deg); }
+  .t3 { left: 64px; top: 290px; transform: rotate(2deg); }
+  .t4 { left: 470px; top: 284px; transform: rotate(-1.5deg); }
+  .t5 { left: 880px; top: 298px; transform: rotate(-3deg); }
+  .t6 { left: 64px; top: 528px; transform: rotate(-2.5deg); }
+  .t1 .panel { box-shadow: 9px 9px 0 #ff6a9a; }
+  .t2 .panel { box-shadow: 9px 9px 0 #ffc46b; }
+  .t3 .panel { box-shadow: 9px 9px 0 #b56dff; }
+  .t4 .panel { box-shadow: 9px 9px 0 #4fd8e0; }
+  .t5 .panel { box-shadow: 9px 9px 0 #6fe0a8; }
+  .t6 .panel { box-shadow: 9px 9px 0 #ff4f8a; }
+  .t1 figcaption { background: #ff6a9a; }
+  .t2 figcaption { background: #ffc46b; }
+  .t3 figcaption { background: #c79bff; }
+  .t4 figcaption { background: #4fd8e0; }
+  .t5 figcaption { background: #6fe0a8; }
+  .t6 figcaption { background: #ff4f8a; }
+  .board .sun { left: 860px; top: 560px; width: 300px; height: 300px; }
+  .board .sea { inset: 690px 0 0 0; }
+  .note { position: absolute; left: 480px; top: 590px; width: 420px; z-index: 5; font-size: 20px; line-height: 1.35; text-shadow: 0 2px 10px rgba(11, 4, 24, 0.9); }
+  .note b { font: 700 22px "Barlow Condensed", sans-serif; letter-spacing: 0.08em; text-transform: uppercase; color: #ffd27a; }
+  .board .tile { width: 336px; }
+</style>
+<body class="board">
+  <div class="sky"></div>
+  <div class="sun"></div>
+  <div class="sea"></div>
+
+  <section class="head">
+    <p class="stamp">Six stations on the dial</p>
+    <h1><span>Pick your</span><span>time of day</span></h1>
+  </section>
+
+  <figure class="tile t1"><div class="panel"><img src="../screens/theme%20flamingo%20morning.png" alt="" /></div><figcaption>Flamingo morning<i>88.1</i></figcaption></figure>
+  <figure class="tile t2"><div class="panel"><img src="../screens/theme%20golden%20hour.png" alt="" /></div><figcaption>Golden hour<i>92.7</i></figcaption></figure>
+  <figure class="tile t3"><div class="panel"><img src="../screens/theme%20vice%20night.png" alt="" /></div><figcaption>Vice night<i>96.3</i></figcaption></figure>
+  <figure class="tile t4"><div class="panel"><img src="../screens/theme%20ocean%20drive.png" alt="" /></div><figcaption>Ocean drive<i>99.9</i></figcaption></figure>
+  <figure class="tile t5"><div class="panel"><img src="../screens/theme%20everglades.png" alt="" /></div><figcaption>Everglades<i>103.5</i></figcaption></figure>
+  <figure class="tile t6"><div class="panel"><img src="../screens/theme%20neon%20noir.png" alt="" /></div><figcaption>Neon noir<i>107.1</i></figcaption></figure>
+
+  <p class="note"><b>Ctrl+Alt+T</b> tunes to the next station. Every theme's text passes a 4.5:1 contrast test.</p>
+</body>
